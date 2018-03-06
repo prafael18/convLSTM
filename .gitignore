@@ -1,0 +1,22 @@
+#Cache files
+convLSTM/__pycache__/
+convLSTM/proc/__pycache__/
+
+#IDE specific files
+.idea/
+
+
+
+#Raw video data (*.avi)
+data/
+3data/test/inputs/
+#data/train/inputs/
+#data/val/inputs/
+
+#data/test/labels/
+#data/train/labels/
+#data/val/labels/
+
+log/
+save/
+temp/
