@@ -99,7 +99,8 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
             epoch = epoch_counter.eval()
             print("Epoch {} completed in {} seconds.\nAverage cross-entropy loss is: {}"
                   .format(epoch, time.time() - start_time, np.mean(np.array(batch_loss))))
-            train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
+            if epoch%10 == 0:
+		train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
             train_writer.add_summary(summary, epoch)
             model.save(sess, save_model_dir, overwrite=True,
                        tags=[tf.saved_model.tag_constants.TRAINING])
@@ -216,8 +217,8 @@ def train():
         epoch_counter = [v for v in tf.global_variables() if v.name == "epoch_counter:0"][0]
 
     # Adds summaries to all trainable variables:
-    for var in tf.trainable_variables():
-        util.variable_summaries(var)
+    # for var in tf.trainable_variables():
+    #    util.variable_summaries(var)
 
     merged_summary = get_summary(load_model)
 
