@@ -3,7 +3,7 @@
 import tensorflow as tf
 import numpy as np
 import time
-import matplotlib.pyplot as plt
+import warnings
 
 import input
 import model
@@ -11,7 +11,8 @@ import config
 import util
 import infer
 
-tfrecords_filename = config.train["tfrecords_filename"]
+train_tfrecords_filename = config.train["train_tfrecords_filename"]
+val_tfrecords_filename = config.train["val_tfrecords_filename"]
 save_model_dir = config.train["save_model_dir"]
 load_model_dir = config.train["load_model_dir"]
 num_epochs = config.train["num_epochs"]
@@ -21,106 +22,229 @@ image_width = config.train["image_width"]
 input_channels = config.train["input_channels"]
 label_channels = config.train["label_channels"]
 writer_dir = config.train["writer_dir"]
+val_epochs = config.train["val_epochs"]
+val_result_file = config.train["val_result_file"]
+
+def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values):
+
+    start_time = time.time()
+    sess.run(initializer)
+    sim_list = []
+    cc_list = []
+    mse_list = []
+    loss_list = []
+
+    activations = tf.nn.sigmoid(logits)
+
+    while True:
+        try:
+            inputs, labels = sess.run([feed_values[0], feed_values[1]])
+            feed_dict = {
+                feed_keys[0]: inputs,
+                feed_keys[1]: labels
+            }
+
+            pred, mean_loss = sess.run([activations, loss], feed_dict=feed_dict)
+
+            pred = np.reshape(pred[0], pred[0].shape[:3])
+            label = np.reshape(labels, labels.shape[1:4])
+
+            loss_list.append(mean_loss)
+            sim_list.append(infer.sim(pred.copy(), label.copy()))
+            cc_list.append(infer.cc(pred.copy(), label.copy()))
+            mse_list.append(infer.mse(pred.copy(), label.copy()))
+
+        except tf.errors.OutOfRangeError:
+            epoch = epoch_counter.eval()
+            sim_value = np.mean(np.array(sim_list))
+            cc_value = np.mean(np.array(cc_list))
+            mse_value = np.mean(np.array(mse_list))
+            loss_value = np.mean(np.array(loss_list))
+
+            print()
+            print("Finished validating in {:.3}s".format(time.time()-start_time))
+            print("Epoch {}'s loss in validation set: {}".format(epoch, loss_value))
+            print("SIM = {}\nCC = {}\nMSE = {}".format(sim_value, cc_value, mse_value))
+            print()
+
+            with open(val_result_file, "a") as f:
+                f.write("Epoch {}: LOSS = {:.3f} SIM = {:.3f} CC = {:.3f} MSE = {:.3f}\n"
+                        .format(epoch, loss_value, sim_value, cc_value, mse_value))
+            break
+
+
+def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
+                    feed_values, summary_op, train_writer=None, run_options=None, run_metadata=None):
+
+    sess.run(initializer)
+    batch_loss = []
+    start_time = time.time()
+    while True:
+        try:
+            # print(feed_values[0])
+            # print(feed_values[1])
+            inputs, labels = sess.run([feed_values[0], feed_values[1]])
+            feed_dict = {
+                feed_keys[0]: inputs,
+                feed_keys[1]: labels
+            }
+            _, loss_val, summary = sess.run([train_op, loss, summary_op],
+                                            feed_dict=feed_dict,
+                                            options=run_options,
+                                            run_metadata=run_metadata)
+            batch_loss.append(loss_val)
+        except tf.errors.OutOfRangeError:
+            increment_epoch = epoch_counter.assign_add(1)
+            sess.run([increment_epoch])
+            epoch = epoch_counter.eval()
+            print("Epoch {} completed in {} seconds.\nAverage cross-entropy loss is: {}"
+                  .format(epoch, time.time() - start_time, np.mean(np.array(batch_loss))))
+            train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
+            train_writer.add_summary(summary, epoch)
+            model.save(sess, save_model_dir, overwrite=True,
+                       tags=[tf.saved_model.tag_constants.TRAINING])
+            break
+    return
+
+def get_summary(load_model):
+    if load_model:
+        return tf.get_default_graph().get_tensor_by_name(name="Merge/MergeSummary:0")
+    else:
+        return tf.summary.merge_all()
+
+def get_train_op(load_model, loss, global_step):
+    if load_model:
+        return tf.get_default_graph().get_operation_by_name("train_op")
+    else:
+        return model.train(loss, global_step, name='train_op')
+
+def get_loss(load_model, logits, label):
+    if load_model:
+        return tf.get_default_graph().get_tensor_by_name(name="loss:0")
+    else:
+        return model.loss(logits, label, name='loss')
+
+def get_logits(load_model, input):
+    if load_model:
+        return tf.get_default_graph().get_tensor_by_name("logits:0")
+    else:
+        return model.inference(input, name='logits')
+
+def get_placeholders(load_model, names=None):
+
+    if load_model:
+        g = tf.get_default_graph()
+        return g.get_tensor_by_name(names[0]+":0"), \
+               g.get_tensor_by_name(names[1]+":0")
+    else:
+        input_x = tf.placeholder(tf.float32, [None, None, image_height, image_width, input_channels],
+                       name=names[0])
+        label_y = tf.placeholder(tf.float32, [None, None, image_height, image_width, label_channels],
+                                 name=names[1])
+        return input_x, label_y
+
+
+def get_data(load_model, dataset, batch_size, names=None):
+
+    if load_model:
+        g = tf.get_default_graph()
+        return g.get_tensor_by_name(names[0]+":0"), \
+               g.get_tensor_by_name(names[1]+":0"), \
+               g.get_operation_by_name(names[2])
+    else:
+        train_dataset = tf.data.TFRecordDataset(dataset)
+        train_dataset = train_dataset.shuffle(buffer_size=40)
+        train_dataset = train_dataset.map(input.parse_function)
+        train_dataset = train_dataset.batch(batch_size=batch_size)
+
+        # Runs through tfrecord once. Must call initializer for every epoch
+        iterator = train_dataset.make_initializable_iterator()
+
+        input_batch, label_batch = iterator.get_next()
+
+        input_batch = tf.identity(input_batch, name=names[0])
+        label_batch = tf.identity(label_batch, name=names[1])
+
+        initializer = iterator.initializer
+        # if name:
+        #     initializer = tf.identity(iterator.initializer, name)
+        # else:
+        #     initializer = iterator.initializer
+
+        return input_batch, label_batch, initializer
 
 def train():
     """Train frames for a number of steps"""
+    print("Global variables before init:")
+    for i in tf.global_variables():
+        print(i)
 
-    with tf.Session() as sess:
+    if load_model_dir:
+        model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])
+        load_model = True
+    else:
+        load_model = False
 
-        print("Global variables before init:")
-        for i in tf.global_variables():
-            print(i)
+    # Necessary in order for input and output to have well defined shapes
+    input_x, label_y = get_placeholders(load_model, names=["input_x", "label_y"])
 
-        if load_model_dir is None:
+    train_input, train_label, train_initializer = get_data(load_model=load_model,
+                                                           dataset=train_tfrecords_filename,
+                                                           batch_size=batch_size,
+                                                           names=["train_input", "train_label", "MakeIterator"])
 
-            train_dataset = tf.data.TFRecordDataset(tfrecords_filename)
-            train_dataset = train_dataset.shuffle(buffer_size=40)
+    val_input, val_label, val_initializer = get_data(load_model=load_model,
+                                                     dataset=val_tfrecords_filename,
+                                                     batch_size=1,
+                                                     names=["val_input", "val_label", "MakeIterator_1"])
 
-            train_dataset = train_dataset.map(input.parse_function)
-            train_dataset = train_dataset.batch(batch_size=batch_size)
+    # Gets global_step (i.e. integer that counts how many batches have been processed)
+    global_step = tf.train.get_or_create_global_step()
 
-            #Runs through tfrecord once. Must call initializer for every epoch
-            iterator = train_dataset.make_initializable_iterator()
+    # Train ops
+    logits = get_logits(load_model=load_model, input=input_x)
+    loss = get_loss(load_model=load_model, logits=logits, label=label_y)
+    train_op = get_train_op(load_model=load_model, loss=loss, global_step=global_step)
 
-            input_batch, label_batch = iterator.get_next()
+    # Initialize variables op
+    if not load_model:
+        epoch_counter = tf.get_variable("epoch_counter", initializer=0, dtype=tf.int32,
+                                        trainable=False, use_resource=True)
+        init = tf.global_variables_initializer()
+        sess.run(init)
+    else:
+        epoch_counter = [v for v in tf.global_variables() if v.name == "epoch_counter:0"][0]
 
-            #Necessary in order for input and output to have well defined shapes
-            input_x = tf.placeholder_with_default(input_batch,
-                                                  [batch_size, None, image_height, image_width, input_channels],
-                                                  name="input_x")
-            label_y = tf.placeholder_with_default(label_batch,
-                                                  [batch_size, None, image_height, image_width, label_channels],
-                                                  name="label_y")
+    # Adds summaries to all trainable variables:
+    for var in tf.trainable_variables():
+        util.variable_summaries(var)
 
-            print(label_y)
-            # Gets global_step (i.e. integer that counts how many batches have been processed)
-            global_step = tf.train.get_or_create_global_step()
+    merged_summary = get_summary(load_model)
 
-            # Train ops
-            logits = model.inference(input_x, name='logits')
-            loss = model.loss(logits, label_y, name='loss')
-            train_op = model.train(loss, global_step, name='train_op')
+    train_writer = tf.summary.FileWriter(writer_dir, sess.graph)
+    run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+    run_metadata = tf.RunMetadata()
 
-            # Initialize variables op
-            init = tf.global_variables_initializer()
-            sess.run(init)
-            iterator_init = iterator.initializer
+    for epoch in range(num_epochs):
+        run_train_epoch(initializer=train_initializer,
+                        epoch_counter=epoch_counter,
+                        train_op=train_op,
+                        loss=loss,
+                        feed_keys=[input_x, label_y],
+                        feed_values=[train_input, train_label],
+                        summary_op=merged_summary,
+                        train_writer=train_writer,
+                        run_options=run_options,
+                        run_metadata=run_metadata)
 
-            #Adds summaries to all trainable variables:
-            for var in tf.trainable_variables():
-                util.variable_summaries(var)
-
-            merged = tf.summary.merge_all()
-            train_writer = tf.summary.FileWriter(writer_dir)
-
-        else:
-            model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])
-
-            #Reference to current graph
-            g = tf.get_default_graph()
-
-            #Iterator op that should be initialized every epoch
-            iterator_init = tf.Graph.get_operation_by_name(g, name="MakeIterator")
-
-            #Retrieves tensor associated to loss op.
-            loss = g.get_tensor_by_name(name='loss:0')
-
-            #Retrieves train_op that should be passed to sess.run()
-            train_op = g.get_operation_by_name(name='train_op')
-
-            #Summary op
-            merged = g.get_tensor_by_name(name="Merged/MergeSummary:0")
-
-        train_writer = tf.summary.FileWriter(writer_dir, sess.graph)
-        run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
-        run_metadata = tf.RunMetadata()
-
-        print("Global variables after init:")
-        for i in tf.global_variables():
-            print(i)
-
-        for epoch in range(num_epochs):
-            sess.run(iterator_init)
-            batch_loss = []
-            start_time = time.time()
-
-            while True:
-                try:
-                    _, loss_val, summary = sess.run([train_op, loss, merged],
-                                                    options=run_options,
-                                                    run_metadata=run_metadata)
-                except tf.errors.OutOfRangeError:
-                    train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
-                    train_writer.add_summary(summary, epoch)
-                    batch_loss.append(loss_val)
-                    print("Epoch {} completed in {} seconds.\n"
-                          "Average cross-entropy loss is: {}"
-                          .format(epoch + 1, time.time() - start_time,
-                                  np.mean(np.array(batch_loss))))
-                    model.save(sess, save_model_dir, overwrite=True,
-                               tags=[tf.saved_model.tag_constants.TRAINING])
-                    break
-
+        if (epoch+1)%val_epochs == 0:
+            run_val(initializer=val_initializer,
+                    epoch_counter=epoch_counter,
+                    logits=logits,
+                    loss=loss,
+                    feed_keys=[input_x, label_y],
+                    feed_values=[val_input, val_label])
 
 if __name__ == "__main__":
-    train()
+    with tf.Session() as sess:
+        train()

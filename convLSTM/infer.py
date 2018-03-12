@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import warnings
 
 import input
 import config
@@ -16,7 +17,8 @@ input_channels = config.eval["input_channels"]
 label_channels = config.eval["label_channels"]
 
 
-def eval():
+def eval(epoch = None):
+    warnings.simplefilter("error", RuntimeWarning)
     with tf.Session() as sess:
 
         train_dataset = tf.data.TFRecordDataset(tfrecords_filename)
@@ -45,21 +47,23 @@ def eval():
 
         # Necessary in order for input and output to have well defined shapes
 
-        logits = g.get_tensor_by_name("conv_1/logits/BiasAdd:0")
-        activations = tf.nn.sigmoid(logits, "pred_activations")
+        logits = g.get_tensor_by_name("logits:0")
+        activations = tf.nn.sigmoid(logits, name="pred_activations")
+        loss = g.get_tensor_by_name("loss:0")
         # iterator_train = g.get_operation_by_name("MakeIterator")
         # sess.run(iterator.initializer)
         sim_list = []
         cc_list = []
         mse_list = []
+        loss_list = []
         while True:
             try:
                 input_x, label_y = sess.run([input_batch, label_batch])
                 feed_dict = {
                     input_tensor: input_x,
+                    label_tensor: label_y
                 }
-                pred = sess.run([activations],
-                                       feed_dict = feed_dict)
+                pred, mean_loss = sess.run([activations, loss], feed_dict = feed_dict)
 
                 # print(input_x.shape)
                 # print(label_y.shape)
@@ -67,66 +71,83 @@ def eval():
 
                 pred = np.reshape(pred[0], pred[0].shape[:3])
                 label = np.reshape(label_y, label_y.shape[1:4])
-                input_x = np.reshape(input_x, input_x.shape[1:])
+                # input_x = np.reshape(input_x, input_x.shape[1:])
 
-                plt.subplot(211)
-                plt.plot("Prediction")
-                plt.imshow(pred[200])
-                plt.subplot(212)
-                plt.title("Label")
-                plt.imshow(label[200])
-                plt.show()
-                print("Average pixel value for:\nPred = ", np.mean(pred))
-                print("Label = ", np.mean(label))
+                # plt.subplot(211)
+                # plt.plot("Prediction")
+                # plt.imshow(pred[200])
+                # plt.subplot(212)
+                # plt.title("Label")
+                # plt.imshow(label[200])
+                # plt.show()
+                # print("Average pixel value for:\nPred = ", np.mean(pred))
+                # print("Label = ", np.mean(label))
+                loss_list.append(mean_loss)
                 sim_list.append(sim(pred.copy(), label.copy()))
                 cc_list.append(cc(pred.copy(), label.copy()))
                 mse_list.append(mse(pred.copy(), label.copy()))
 
-                print(pred.shape)
+                # print(pred.shape)
             except tf.errors.OutOfRangeError:
                 print("Finished testing predictions")
-                # print("SIM_list = ", sim_list)
-                # print("CC_list = ", cc_list)
-                # print("MSE_list = ", mse_list)
+
                 sim_value = np.mean(np.array(sim_list))
                 cc_value = np.mean(np.array(cc_list))
                 mse_value = np.mean(np.array(mse_list))
+                loss_value = np.mean(np.array(loss_list))
+
+                if epoch:
+                    print("Epoch {}'s loss in validation set: {}".format(epoch, loss_value))
                 print("SIM = {}\nCC = {}\nMSE = {}\n".format(sim_value, cc_value, mse_value))
+
                 return sim_value, cc_value, mse_value
 
 def sim(pred, label):
-
+    warnings.simplefilter("error", RuntimeWarning)
     #Pre-process data:
     #(1) Normalize pred and label between 0 and 1
     #(2) Make sure that all pixel values add up to 1
-    for i in range(pred.shape[0]):
-        pred[i] = (pred[i] - np.min(pred[i]))/(np.max(pred[i])-np.min(pred[i]))
-        pred[i] = pred[i]/np.sum(pred[i])
+    # print("Sum pred = ", np.sum(pred))
 
-    for i in range(label.shape[0]):
-        label[i] = label[i]/np.sum(label[i])
+    assert pred.shape[0] is label.shape[0]
+    frames = pred.shape[0]
 
-    sim_coeff = np.minimum(pred, label)
-    sim_list = [np.sum(f) for f in sim_coeff]
-    sim_mean = np.mean(np.array(sim_list))
+    sim_list = []
 
-    return sim_mean
+    for i in range(frames):
+        try:
+            pred[i] = (pred[i] - np.min(pred[i]))/(np.max(pred[i])-np.min(pred[i]))
+            pred[i] = pred[i]/np.sum(pred[i])
+            label[i] = label[i]/np.sum(label[i])
+            sim_coeff = np.minimum(pred, label)
+            sim_list = [np.sum(f) for f in sim_coeff]
+        except RuntimeWarning:
+            pass
+            # print("Failed to append frame {} to sim_list".format(i))
+
+    return np.mean(np.array(sim_list))
+
 
 def cc(pred, label):
+    warnings.simplefilter("error", RuntimeWarning)
+    frames = pred.shape[0]
+    assert frames is label.shape[0]
 
-    #Normalize data to have mean 0 and variance 1
-    for i in range(pred.shape[0]):
-        pred[i] = (pred[i] - np.mean(pred[i])) / np.std(pred[i])
-
-    for i in range(label.shape[0]):
-        label[i] = (label[i]-np.mean(label[i]))/np.std(label[i])
-
-    #Calculate correlation coefficient for every frame
     corr_coeff = []
-    for i in range(label.shape[0]):
-        pd = pred[i]-np.mean(pred[i])
-        ld = label[i]-np.mean(label[i])
-        corr_coeff.append((pd*ld).sum()/np.sqrt((pd*pd).sum()*(ld*ld).sum()))
+
+    for i in range(frames):
+        try:
+            # Normalize data to have mean 0 and variance 1
+            pred[i] = (pred[i] - np.mean(pred[i])) / np.std(pred[i])
+            label[i] = (label[i] - np.mean(label[i])) / np.std(label[i])
+
+            # Calculate correlation coefficient for every frame
+            pd = pred[i] - np.mean(pred[i])
+            ld = label[i] - np.mean(label[i])
+            corr_coeff.append((pd * ld).sum() / np.sqrt((pd * pd).sum() * (ld * ld).sum()))
+        except RuntimeWarning:
+            pass
+            # print("Failed to append frame {} to corr_coeff".format(i))
 
     return np.mean(np.array(corr_coeff))
 
