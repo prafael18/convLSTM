@@ -9,7 +9,7 @@ convLSTM/proc/__pycache__/
 
 #Raw video data (*.avi)
 data/
-3data/test/inputs/
+#data/test/inputs/
 #data/train/inputs/
 #data/val/inputs/
 
@@ -19,4 +19,4 @@ data/
 
 log/
 save/
-temp/
+results/

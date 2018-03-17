@@ -60,7 +60,7 @@ def convLSTM(input, **kwargs):
         print ("ConvLSTM input_shape: ", input.shape)
         print("Batch_size: ", tf.shape(input)[0])
         # # input_shape = input.shape.as_list()[2:]
-        input_shape = [34, 60, 64]
+        input_shape = [34, 60, kwargs["output_channels"]]
         lstmCell = tf.contrib.rnn.Conv2DLSTMCell(
             input_shape=input_shape, **kwargs)
 
@@ -133,7 +133,7 @@ def inference(inputs, name=None):
             initializers=tf.contrib.layers.xavier_initializer(),
             forget_bias=1.0)
     net = framewise_op(net, upconv,
-            filters=32,
+            filters=64,
             kernel_size=[5,5],
             strides=[2,2],
             activation=tf.nn.relu,

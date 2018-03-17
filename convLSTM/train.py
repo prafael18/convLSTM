@@ -3,27 +3,30 @@
 import tensorflow as tf
 import numpy as np
 import time
-import warnings
 
 import input
 import model
 import config
-import util
 import infer
 
-train_tfrecords_filename = config.train["train_tfrecords_filename"]
-val_tfrecords_filename = config.train["val_tfrecords_filename"]
-save_model_dir = config.train["save_model_dir"]
-load_model_dir = config.train["load_model_dir"]
+i = config.train["machine_index"]
+train_tfrecords_filename = config.train["train_tfrecords_filename"][i]
+val_tfrecords_filename = config.train["val_tfrecords_filename"][i]
+save_model_dir = config.train["save_model_dir"][i]
+load_model_dir = config.train["load_model_dir"][i]
 num_epochs = config.train["num_epochs"]
 batch_size = config.train["batch_size"]
 image_height = config.train["image_height"]
 image_width = config.train["image_width"]
 input_channels = config.train["input_channels"]
 label_channels = config.train["label_channels"]
-writer_dir = config.train["writer_dir"]
+writer_dir = config.train["writer_dir"][i]
 val_epochs = config.train["val_epochs"]
-val_result_file = config.train["val_result_file"]
+val_result_file = config.train["val_result_file"][i]
+train_result_file = config.train["train_result_file"][i]
+status_file = config.train["status_file"][i]
+
+BEST_LOSS = 9999
 
 def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values):
 
@@ -62,15 +65,15 @@ def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values):
             loss_value = np.mean(np.array(loss_list))
 
             print()
-            print("Finished validating in {:.3}s".format(time.time()-start_time))
-            print("Epoch {}'s loss in validation set: {}".format(epoch, loss_value))
-            print("SIM = {}\nCC = {}\nMSE = {}".format(sim_value, cc_value, mse_value))
+            print("Finished validating in {:.3f}s".format(time.time()-start_time))
+            print("Epoch {}'s loss in validation set: {:.4f}".format(epoch, loss_value))
+            print("SIM = {:.3f}\nCC = {:.3f}\nMSE = {:.3f}".format(sim_value, cc_value, mse_value))
             print()
 
             with open(val_result_file, "a") as f:
                 f.write("Epoch {}: LOSS = {:.3f} SIM = {:.3f} CC = {:.3f} MSE = {:.3f}\n"
                         .format(epoch, loss_value, sim_value, cc_value, mse_value))
-            break
+            return loss_value
 
 
 def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
@@ -97,13 +100,13 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
             increment_epoch = epoch_counter.assign_add(1)
             sess.run([increment_epoch])
             epoch = epoch_counter.eval()
-            print("Epoch {} completed in {} seconds.\nAverage cross-entropy loss is: {}"
+            with open(train_result_file, "a") as f:
+                f.write("Epoch {}: TIME = {:.3f} LOSS = {:.3f}\n".format(epoch, time.time()-start_time, np.mean(np.array(batch_loss))))
+            print("Epoch {} completed in {} seconds.\nAverage cross-entropy loss is: {:.3}"
                   .format(epoch, time.time() - start_time, np.mean(np.array(batch_loss))))
             if epoch%10 == 0:
-		train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
+                train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
             train_writer.add_summary(summary, epoch)
-            model.save(sess, save_model_dir, overwrite=True,
-                       tags=[tf.saved_model.tag_constants.TRAINING])
             break
     return
 
@@ -216,6 +219,10 @@ def train():
     else:
         epoch_counter = [v for v in tf.global_variables() if v.name == "epoch_counter:0"][0]
 
+    for v in tf.trainable_variables():
+        print(v)
+        print (v.shape)
+    print("Params: ", np.sum([np.prod(v.get_shape().as_list()) for v in tf.trainable_variables()]))
     # Adds summaries to all trainable variables:
     # for var in tf.trainable_variables():
     #    util.variable_summaries(var)
@@ -225,6 +232,8 @@ def train():
     train_writer = tf.summary.FileWriter(writer_dir, sess.graph)
     run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
     run_metadata = tf.RunMetadata()
+
+    worse_epochs = 0
 
     for epoch in range(num_epochs):
         run_train_epoch(initializer=train_initializer,
@@ -239,12 +248,28 @@ def train():
                         run_metadata=run_metadata)
 
         if (epoch+1)%val_epochs == 0:
-            run_val(initializer=val_initializer,
+            val_loss = run_val(initializer=val_initializer,
                     epoch_counter=epoch_counter,
                     logits=logits,
                     loss=loss,
                     feed_keys=[input_x, label_y],
                     feed_values=[val_input, val_label])
+
+            if val_loss < BEST_LOSS:
+                worse_epochs = 0
+                model.save(sess, save_model_dir, overwrite=True,
+                           tags=[tf.saved_model.tag_constants.TRAINING])
+                with open(val_result_file.split('.')[0] + "_best.txt", "w") as f:
+                    f.write("Best results on validation set:\n")
+                    f.write("Epoch {}: LOSS = {:.4f}\n".format(epoch, val_loss))
+            else:
+                worse_epochs += 1
+                if worse_epochs >= 10:
+                    with open(status_file, "a") as f:
+                        f.write("Previous {} epochs have show no improvements.\n"
+                                "Stopping training is advised.\n".format(worse_epochs))
+
+
 
 if __name__ == "__main__":
     with tf.Session() as sess:

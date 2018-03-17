@@ -15,6 +15,7 @@ import numpy as np
 import tensorflow as tf
 
 import os
+import matplotlib.pyplot as plt
 from scipy.misc import imshow
 
 FLAGS = flags.FLAGS
@@ -34,11 +35,12 @@ flags.DEFINE_string('input_dtype', "uint8", 'data type to use for numpy matrices
 flags.DEFINE_string('label_dtype', "float32", 'data type to use for numpy matrices')
 flags.DEFINE_integer('max_frames_per_video', 15, 'maximum frames per clip')
 
+set = "val"
 #Flags that require adjustments
-flags.DEFINE_string('destination', '/home/rafael/Documents/unicamp/ic/src/data/val/tfr', 'Directory for storing tf records')
-flags.DEFINE_string('input_source', '/home/rafael/Documents/unicamp/ic/src/data/val/inputs', 'Directory with input video files')
-flags.DEFINE_string('label_source', '/home/rafael/Documents/unicamp/ic/src/data/val/labels', 'Directory with label video files')
-flags.DEFINE_string('dataset_name', 'val', 'name used to create tfrecord file')
+flags.DEFINE_string('destination', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/tfr', 'Directory for storing tf records')
+flags.DEFINE_string('input_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/inputs', 'Directory with input video files')
+flags.DEFINE_string('label_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/labels', 'Directory with label video files')
+flags.DEFINE_string('dataset_name', set+"_raw_rgb", 'name used to create tfrecord file')
 
 def _int64_feature(value):
   return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -100,7 +102,8 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
       if writer is not None:
         writer.close()
       filename = os.path.join(destination_path,
-                              name + str(current_record_num+1) + '_of_' + str(total_record_num) + '.tfrecords')
+                              name+".tfrecords")
+                              # name + str(current_record_num+1) + '_of_' + str(total_record_num) + '.tfrecords')
 
       print('Writing', filename)
       writer = tf.python_io.TFRecordWriter(filename)
@@ -159,6 +162,12 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
 
   def video_file_to_ndarray(i, filename):
 
+    ignore_frames = []
+    if filename.find('v35') >= 0:
+      ignore_frames = [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]
+    if filename.find('v12') >= 0:
+      ignore_frames = [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 400]
+
     assert os.path.isfile(filename), "Couldn't find video file"
     cap = getVideoCapture(filename)
     assert cap is not None, "Couldn't load video capture:" + filename + ". Moving to next video."
@@ -176,49 +185,79 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
 
     # print(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
+    empty_frames = []
     while ret:
 
-      #Change image colorspace (n_channels is 3 for input and 1 for label)
-      if input:
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-      else:
-        image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # print("Max = {}, min = {}".format(np.max(image), np.min(image)))
-        if np.max(image) > 0:
-          image = (image-np.min(image))/(np.max(image)-np.min(image))
-
-      # print(image.shape)
-      # print(frame.shape)
-      #Reduce image dimensions with bicubic interpolation.
-      image = cv2.resize(image, None, fx=0.125, fy=0.125, interpolation=cv2.INTER_CUBIC)
-
-      if not clip.any():
-        clip = image.reshape(1, height, width, n_channels)
-      else:
-        clip = np.concatenate((clip, image.reshape(1, height, width, n_channels)), axis=0)
-
-      # print("Current clip shape = ", clip.shape)
-
-      frames_counter += 1
       total_frames_count += 1
 
-      if frames_counter == max_frames_per_clip:
+      if not frame.any():
+        empty_frames.append(total_frames_count)
 
-        video.append(clip)
+      if total_frames_count in ignore_frames:
+        print("Ignoring frame that has frame.any() = ", frame.any())
+        ret, frame = getNextFrame(cap)
+        continue
+      elif frame.any():
+        # Change image colorspace (n_channels is 3 for input and 1 for label)
+        if input:
+          image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        else:
+          image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+          # print("Max = {}, min = {}".format(np.max(image), np.min(image)))
+          if np.max(image) > 0:
+            image = (image - np.min(image)) / (np.max(image) - np.min(image))
 
-        num_clips += 1
-        frames_counter = 0
-        clip = np.array([])
+        # if filename.find('v12') >= 0:
+        #   if total_frames_count == 400:
+        #     plt.imshow(image)
+        #     plt.show()
+        # print(image.shape)
+        # print(frame.shape)
+        # Reduce image dimensions with bicubic interpolation.
+        image = cv2.resize(image, None, fx=0.125, fy=0.125, interpolation=cv2.INTER_CUBIC)
 
-      if input:
-        # print("Num clips = {}, clip_list[i] = {}".format(num_clips, clip_list[i]))
-        if num_clips == clip_list[i]:
-          break
+        if np.sum(image) == 0:
+          ret, frame = getNextFrame(cap)
+          continue
 
-      ret, frame = getNextFrame(cap)
+        if not clip.any():
+          clip = image.reshape(1, height, width, n_channels)
+        else:
+          clip = np.concatenate((clip, image.reshape(1, height, width, n_channels)), axis=0)
+
+        # print("Current clip shape = ", clip.shape)
+
+        frames_counter += 1
+
+        if frames_counter == max_frames_per_clip:
+          video.append(clip)
+
+          num_clips += 1
+          frames_counter = 0
+          clip = np.array([])
+
+        if input:
+          # print("Num clips = {}, clip_list[i] = {}".format(num_clips, clip_list[i]))
+          if num_clips == clip_list[i]:
+            break
+
+        ret, frame = getNextFrame(cap)
+
+      else:
+        print("Breaking because frame.any() = ", frame.any())
+        break
+
+
+
+      # # if total_frames_count is
+      # if not frame.any():
+      #   empty_frames.append(total_frames_count+1)
+
+
+
 
     cap.release()
-
+    print("Empty frames = ", empty_frames)
     video = np.array(video)
 
     return video.copy(), num_clips
