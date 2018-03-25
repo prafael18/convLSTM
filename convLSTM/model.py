@@ -54,13 +54,13 @@ def resize(input, **kwargs):
         print("Resize output shape = ", output)
     return output
 
-def convLSTM(input, **kwargs):
+def convLSTM(input, input_channels, **kwargs):
     with tf.name_scope("convLSTM") as scope:
         print("Current scope is: ", scope)
         print ("ConvLSTM input_shape: ", input.shape)
         print("Batch_size: ", tf.shape(input)[0])
         # # input_shape = input.shape.as_list()[2:]
-        input_shape = [34, 60, kwargs["output_channels"]]
+        input_shape = [34, 60, input_channels]
         lstmCell = tf.contrib.rnn.Conv2DLSTMCell(
             input_shape=input_shape, **kwargs)
 
@@ -109,7 +109,7 @@ def inference(inputs, name=None):
             strides=[2,2],
             padding="SAME")
     net = framewise_op(net, conv,
-            filters=64,
+            filters=32,
             kernel_size=[5,5],
             padding="SAME", activation=tf.nn.relu)
     net = framewise_op(net, max_pool,
@@ -117,23 +117,23 @@ def inference(inputs, name=None):
             strides=[2,2],
             padding="SAME")
     print("After all conv and max_pool ops:", net)
-    net = convLSTM(net,
+    net = convLSTM(net, 32,
             output_channels=128,
             kernel_shape=[5, 5],
             initializers=tf.contrib.layers.xavier_initializer(),
             forget_bias=1.0)
-    net = convLSTM(net,
+    net = convLSTM(net, 128,
             output_channels=64,
             kernel_shape=[5,5],
             initializers=tf.contrib.layers.xavier_initializer(),
             forget_bias=1.0)
-    net = convLSTM(net,
+    net = convLSTM(net, 64,
             output_channels=64,
             kernel_shape=[5,5],
             initializers=tf.contrib.layers.xavier_initializer(),
             forget_bias=1.0)
     net = framewise_op(net, upconv,
-            filters=64,
+            filters=32,
             kernel_size=[5,5],
             strides=[2,2],
             activation=tf.nn.relu,
