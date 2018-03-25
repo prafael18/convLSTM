@@ -1,8 +1,11 @@
 # import os
 # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
+from tensorflow.python.platform import gfile
 import numpy as np
 import time
+import os
+from scipy.misc import imsave
 
 import input
 import model
@@ -26,7 +29,6 @@ val_result_file = config.train["val_result_file"][i]
 train_result_file = config.train["train_result_file"][i]
 status_file = config.train["status_file"][i]
 
-BEST_LOSS = 9999
 
 def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values):
 
@@ -82,6 +84,7 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
     sess.run(initializer)
     batch_loss = []
     start_time = time.time()
+    count = 1
     while True:
         try:
             # print(feed_values[0])
@@ -91,11 +94,17 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
                 feed_keys[0]: inputs,
                 feed_keys[1]: labels
             }
+            # print("For epoch {} - batch {}: input shape = {} and label shape = {}".format(epoch_counter, count, inputs.shape, labels.shape))
+            # for f in range(labels.shape[0]):
+                # print(labels.shape)
+                # print(labels[f][0,:,:,0].shape)
+                # imsave("out/epoch_{}_batch_{}_input_{}.png".format(epoch+1, count, f), labels[f][0,:,:,0])
             _, loss_val, summary = sess.run([train_op, loss, summary_op],
                                             feed_dict=feed_dict,
                                             options=run_options,
                                             run_metadata=run_metadata)
             batch_loss.append(loss_val)
+            count+=1
         except tf.errors.OutOfRangeError:
             increment_epoch = epoch_counter.assign_add(1)
             sess.run([increment_epoch])
@@ -148,7 +157,7 @@ def get_placeholders(load_model, names=None):
         return input_x, label_y
 
 
-def get_data(load_model, dataset, batch_size, names=None):
+def get_data(load_model, filenames, batch_size, names=None):
 
     if load_model:
         g = tf.get_default_graph()
@@ -156,8 +165,13 @@ def get_data(load_model, dataset, batch_size, names=None):
                g.get_tensor_by_name(names[1]+":0"), \
                g.get_operation_by_name(names[2])
     else:
-        train_dataset = tf.data.TFRecordDataset(dataset)
-        train_dataset = train_dataset.shuffle(buffer_size=40)
+        files = tf.data.Dataset.from_tensor_slices(filenames)
+        files = files.shuffle(buffer_size=filenames.__len__())
+        train_dataset = files.interleave(lambda x: tf.data.TFRecordDataset(x),
+                                   cycle_length=filenames.__len__(), block_length=1)
+
+        # train_dataset = tf.data.TFRecordDataset(filenames)
+        # train_dataset = train_dataset.shuffle(buffer_size=40)
         train_dataset = train_dataset.map(input.parse_function)
         train_dataset = train_dataset.batch(batch_size=batch_size)
 
@@ -178,10 +192,18 @@ def get_data(load_model, dataset, batch_size, names=None):
         return input_batch, label_batch, initializer
 
 def train():
+    BEST_LOSS = 9999
+
     """Train frames for a number of steps"""
     print("Global variables before init:")
     for i in tf.global_variables():
         print(i)
+
+    train_filenames = gfile.Glob(train_tfrecords_filename)
+    val_filenames = gfile.Glob(val_tfrecords_filename)
+
+    print("Train filenames:\n", train_filenames)
+    print("Val filenames:\n", val_filenames)
 
     if load_model_dir:
         model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])
@@ -193,12 +215,12 @@ def train():
     input_x, label_y = get_placeholders(load_model, names=["input_x", "label_y"])
 
     train_input, train_label, train_initializer = get_data(load_model=load_model,
-                                                           dataset=train_tfrecords_filename,
+                                                           filenames=train_filenames,
                                                            batch_size=batch_size,
                                                            names=["train_input", "train_label", "MakeIterator"])
 
     val_input, val_label, val_initializer = get_data(load_model=load_model,
-                                                     dataset=val_tfrecords_filename,
+                                                     filenames=val_filenames,
                                                      batch_size=1,
                                                      names=["val_input", "val_label", "MakeIterator_1"])
 
@@ -256,6 +278,7 @@ def train():
                     feed_values=[val_input, val_label])
 
             if val_loss < BEST_LOSS:
+                BEST_LOSS = val_loss
                 worse_epochs = 0
                 model.save(sess, save_model_dir, overwrite=True,
                            tags=[tf.saved_model.tag_constants.TRAINING])
@@ -266,7 +289,7 @@ def train():
                 worse_epochs += 1
                 if worse_epochs >= 10:
                     with open(status_file, "a") as f:
-                        f.write("Previous {} epochs have show no improvements.\n"
+                        f.write("Previous {} epochs have shown no improvements.\n"
                                 "Stopping training is advised.\n".format(worse_epochs))
 
 
