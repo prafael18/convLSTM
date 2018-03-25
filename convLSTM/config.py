@@ -1,8 +1,10 @@
 
 train = {
     "machine_index": 0,
-    "train_tfrecords_filename": ["/home/rafael/Documents/unicamp/ic/src/data/train/tfr/train_raw_lab.tfrecords", "/home/panda/ic/data/train/train_raw_lab.tfrecords"],
-    "val_tfrecords_filename": ["/home/rafael/Documents/unicamp/ic/src/data/val/tfr/val_raw_lab.tfrecords", "/home/panda/ic/data/val/val_raw_lab.tfrecords"],
+    "train_tfrecords_filename": ["/home/rafael/Documents/unicamp/ic/src/data/train/tfr/fnorm/*",
+                                 "/home/panda/ic/data/train/train_raw_lab.tfrecords"],
+    "val_tfrecords_filename": ["/home/rafael/Documents/unicamp/ic/src/data/val/tfr/val_fnorm_rgb.tfrecords",
+                               "/home/panda/ic/data/val/val_raw_lab.tfrecords"],
     "save_model_dir": ["/home/rafael/Documents/unicamp/ic/src/save", "home/panda/ic/save"],
     "load_model_dir": [None, None],
     "writer_dir": ["/home/rafael/Documents/unicamp/ic/src/log", "/home/panda/ic/log"],

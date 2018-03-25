@@ -15,6 +15,8 @@ import numpy as np
 import tensorflow as tf
 
 import os
+import readtfrecord
+
 import matplotlib.pyplot as plt
 from scipy.misc import imshow
 
@@ -25,22 +27,29 @@ flags.DEFINE_integer('n_videos_in_record', 40, 'Number of videos stored in one s
                                                'reducing the number of videos per record might aid with any memory problems.')
 flags.DEFINE_string('file_suffix', "*.avi", 'defines the video file type, e.g. .mp4')
 
+STD_SCORE = 0
+FEAT_SCALING = 1
 
 #Data specific flags
 flags.DEFINE_integer('width_video', 240, 'the desired width of the videos to be stored in tfrecord')
 flags.DEFINE_integer('height_video', 135, 'the desired height of the videos to be stored in tfrecord')
 flags.DEFINE_integer('input_channels', 3, 'the input channels source video (e.g. 3 for RGB)')
 flags.DEFINE_integer('label_channels', 1, 'the output channels for label video (e.g. 1 for grayscale)')
-flags.DEFINE_string('input_dtype', "uint8", 'data type to use for numpy matrices')
+flags.DEFINE_string('input_dtype', "float32", 'data type to use for numpy matrices')
 flags.DEFINE_string('label_dtype', "float32", 'data type to use for numpy matrices')
 flags.DEFINE_integer('max_frames_per_video', 15, 'maximum frames per clip')
 
 set = "val"
 #Flags that require adjustments
-flags.DEFINE_string('destination', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/tfr', 'Directory for storing tf records')
-flags.DEFINE_string('input_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/inputs', 'Directory with input video files')
-flags.DEFINE_string('label_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/labels', 'Directory with label video files')
-flags.DEFINE_string('dataset_name', set+"_raw_rgb", 'name used to create tfrecord file')
+flags.DEFINE_integer('clips_per_file', 1000, 'Number of clips per tf record.')
+flags.DEFINE_string('destination', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/tfr/', 'Directory for storing tf records')
+flags.DEFINE_string('input_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/inputs/', 'Directory with input video files')
+flags.DEFINE_string('label_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/labels/', 'Directory with label video files')
+flags.DEFINE_string('dataset_name', set+"_fs_fnorm_rgb", 'name used to create tfrecord file')
+flags.DEFINE_integer('norm', 1, 'Integer indicating normalization type (x - x.mean)/x.std:'
+                                '0 - raw'
+                                '1 - frame norm'
+                                '2 - clip norm')
 
 def _int64_feature(value):
   return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -73,7 +82,7 @@ def getNextFrame(cap):
 
 def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
                             current_record_num, total_record_num, input_dtype, label_dtype,
-                            max_frames_per_clip):
+                            max_frames_per_clip, clips_per_file):
   """Converts an entire dataset into x tfrecords where x=videos/fragmentSize.
   :param input_data: ndarray(uint32) of shape (v,i,h,w,c) with v=number of videos, i=number of images, c=number of image
   channels, h=image height, w=image width
@@ -88,35 +97,34 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
   """
 
   #Here we assume that the input and label videos have the same shape
-  num_videos = input_data.shape[0]
+  num_clips = input_data.shape[0]
   height = input_data[0].shape[1]
   width = input_data[0].shape[2]
   writer = None
   feature = {}
 
-  print("Num videos = {}, height = {}, width = {}\n".format(num_videos, height, width))
+  print("Num videos = {}, height = {}, width = {}\n".format(num_clips, height, width))
 
-  for videoCount in range(num_videos):
-
-    if videoCount == 0:
+  for clip_count in range(num_clips):
+    if clip_count%clips_per_file == 0:
       if writer is not None:
         writer.close()
-      filename = os.path.join(destination_path,
-                              name+".tfrecords")
-                              # name + str(current_record_num+1) + '_of_' + str(total_record_num) + '.tfrecords')
 
+      filename = os.path.join(destination_path, name+".tfrecords")
       print('Writing', filename)
       writer = tf.python_io.TFRecordWriter(filename)
+      #    name + "_" + str(current_record_num+1) + "_" + str(videoCount+1) + ".tfrecords")
+      # '_of_' + str(total_record_num) + '.tfrecords')
 
     input_list = []
     label_list = []
     for imageCount in range(max_frames_per_clip):
 
-      input_list.append(input_data[videoCount][imageCount, :, :, :]
+      input_list.append(input_data[clip_count][imageCount, :, :, :]
                         .astype(input_dtype)
                         .tostring())
 
-      label_list.append(label_data[videoCount][imageCount, :, :, :]
+      label_list.append(label_data[clip_count][imageCount, :, :, :]
                         .astype(label_dtype)
                         .tostring())
 
@@ -130,13 +138,35 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
     example = tf.train.Example(features=tf.train.Features(feature=feature))
     writer.write(example.SerializeToString())
 
-  print("Finished writing {} videos to tfrecord file {}/{}".format(num_videos, current_record_num+1, total_record_num))
+  print("Finished writing {} videos to tfrecord file {}/{}".format(num_clips, current_record_num+1, total_record_num))
 
   if writer is not None:
     writer.close()
 
+def normalize(n_array, type):
+  # print("Inside normalize")
+  n_array = n_array.astype(np.float32)
+  init_shape = n_array.shape
+  n_array = n_array.reshape(np.product(n_array.shape[:-1]), n_array.shape[-1])
+  # print(n_array.shape)
+  if type == STD_SCORE:
+    n_array -= np.mean(n_array, axis=0)
+    n_array /= np.std(n_array, axis=0)
+  if type == FEAT_SCALING:
+    min = np.min(n_array, axis=0)
+    max = np.max(n_array, axis=0)
+    if max.all() > 0:
+      n_array = (n_array-min)/(max-min)
+  # print("Before reshape")
+  # print("Channel 1: std = {}, mean = {}".format(np.std(n_array[:][i])))
+  n_array = n_array.reshape(init_shape)
+  # for i in range(n_array.shape[-1]):
+  #   print("For channel {}: std = {}, mean = {}"
+  #         .format(i+1, np.std(n_array[:][:][i]), np.mean(n_array[:][:][i])))
+  return n_array
 
-def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max_frames_per_clip, input, clip_list=None):
+
+def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max_frames_per_clip, input, norm, clip_list=None):
   """Generates an ndarray from multiple video files given by filenames.
   Implementation chooses frame step size automatically for a equal separation distribution of the video images.
 
@@ -199,38 +229,41 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         continue
       elif frame.any():
         # Change image colorspace (n_channels is 3 for input and 1 for label)
+        frame = frame.astype(np.float32)
         if input:
           image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         else:
           image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-          # print("Max = {}, min = {}".format(np.max(image), np.min(image)))
-          if np.max(image) > 0:
-            image = (image - np.min(image)) / (np.max(image) - np.min(image))
 
-        # if filename.find('v12') >= 0:
-        #   if total_frames_count == 400:
-        #     plt.imshow(image)
-        #     plt.show()
-        # print(image.shape)
-        # print(frame.shape)
-        # Reduce image dimensions with bicubic interpolation.
         image = cv2.resize(image, None, fx=0.125, fy=0.125, interpolation=cv2.INTER_CUBIC)
 
         if np.sum(image) == 0:
           ret, frame = getNextFrame(cap)
           continue
 
+        if input and norm == 1:
+          image = normalize(image, FEAT_SCALING)
+        if not input:
+          image = image.reshape(image.shape[0], image.shape[1], 1)
+          image = normalize(image, FEAT_SCALING)
+          image = image.reshape(image.shape[:-1])
+
         if not clip.any():
           clip = image.reshape(1, height, width, n_channels)
         else:
           clip = np.concatenate((clip, image.reshape(1, height, width, n_channels)), axis=0)
 
-        # print("Current clip shape = ", clip.shape)
-
         frames_counter += 1
 
         if frames_counter == max_frames_per_clip:
+          if input and norm == 2:
+            clip = normalize(clip, FEAT_SCALING)
+            # print("max = ", clip.max(), "min = ", clip.min())
+
           video.append(clip)
+
+          # if input:
+          #   readtfrecord.stats(clip)
 
           num_clips += 1
           frames_counter = 0
@@ -246,15 +279,6 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
       else:
         print("Breaking because frame.any() = ", frame.any())
         break
-
-
-
-      # # if total_frames_count is
-      # if not frame.any():
-      #   empty_frames.append(total_frames_count+1)
-
-
-
 
     cap.release()
     print("Empty frames = ", empty_frames)
@@ -274,13 +298,8 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         data = np.concatenate((data, v), axis=0)
       if not input:
         clips.append(n)
-    # try:
-
-    # except Exception as e:
-    #   print(e)
 
   print("Final record shape = ", data.shape)
-  # print(data.shape)
 
   return data, clips
 
@@ -289,7 +308,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
 def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset_name,
                                n_videos_in_record, file_suffix,
                                width, height, input_channels, label_channels, input_dtype, label_dtype,
-                               max_frames_per_video):
+                               max_frames_per_video, clips_per_file, norm):
   """calls sub-functions convert_video_to_numpy and save_numpy_to_tfrecords in order to directly export tfrecords files
   :param input_path: directory where input videos videos are stored
   :param label_path: directory where label videos are stored
@@ -335,12 +354,12 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
     #which is used to ensure the number of frames processed in the label videos is the same as the input videos.
     label_data, clip_list = convert_video_to_numpy(record_num = i, filenames=label_filenames_split[i],
                                                     width=width, height=height, n_channels=label_channels, max_frames_per_clip=max_frames_per_video,
-                                                    input=False)
+                                                    input=False, norm=norm)
 
     #When input=True, an empty frame_list is returned.
     input_data, _ = convert_video_to_numpy(record_num = i, filenames=input_filenames_split[i],
                                            width=width, height=height, n_channels=input_channels, max_frames_per_clip=max_frames_per_video,
-                  input=True, clip_list=clip_list)
+                                           input=True, norm=norm, clip_list=clip_list)
 
     for j in range(label_data.shape[0]):
       print("Record {} - Video {}: label clips = {}, input clips = {}".
@@ -348,14 +367,15 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
 
     save_numpy_to_tfrecords(input_data, label_data, destination_path,
                             dataset_name, i, total_record_number, input_dtype, label_dtype,
-                            max_frames_per_video)
+                            max_frames_per_video, clips_per_file)
 
 def main(argv):
   convert_videos_to_tfrecord(FLAGS.input_source, FLAGS.label_source, FLAGS.destination, FLAGS.dataset_name,
                              FLAGS.n_videos_in_record, FLAGS.file_suffix,
                              FLAGS.width_video, FLAGS.height_video, FLAGS.input_channels, FLAGS.label_channels,
                              FLAGS.input_dtype, FLAGS.label_dtype,
-                             FLAGS.max_frames_per_video)
+                             FLAGS.max_frames_per_video,
+                             FLAGS.clips_per_file, FLAGS.norm)
 
 
 if __name__ == '__main__':

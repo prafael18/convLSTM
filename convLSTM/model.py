@@ -82,6 +82,7 @@ def framewise_op(input, op, **kwargs):
     #Note that this only works because each of these variables are well defined
     #in the operation set_shape inside the input module.
     input_shape = tf.concat([[-1], tf.shape(input)[2:]], axis=0)
+
     input_flat = tf.reshape(input, input_shape)
 
     output_flat = op(input_flat, **kwargs)
