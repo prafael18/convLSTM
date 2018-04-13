@@ -1,15 +1,15 @@
 
 train = {
-    "machine_index": 0,
+    "machine_index": 1,
 
     "train_tfrecords_filename":
         ["/home/rafael/Documents/unicamp/ic/src/data/train/tfr/fs_fnorm/*",
-         "/home/panda/ic/data/train/fnorm/*",
+         "/home/panda/ic/data/train/raw_rgb/*",
          "/home/storage_local/panda/data/train/train_raw_rgb.tfrecords"],
 
     "val_tfrecords_filename":
         ["/home/rafael/Documents/unicamp/ic/src/data/val/tfr/val_fs_fnorm_rgb.tfrecords",
-         "/home/panda/ic/data/val/val_fnorm_raw_lab.tfrecords",
+         "/home/panda/ic/data/val/val_raw_rgb.tfrecords",
          "/home/storage_local/panda/data/val/val_raw_rgb.tfrecords"],
 
     "save_model_dir":

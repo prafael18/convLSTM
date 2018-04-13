@@ -83,8 +83,10 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
     if clip_count%clips_per_file == 0:
       if writer is not None:
         writer.close()
-
-      filename = os.path.join(destination_path, name + "_" + str(current_record_num+1) + "_" + str(clip_count+1) + ".tfrecords")
+      if num_clips > 1:
+        filename = os.path.join(destination_path, name + "_" + str(current_record_num+1) + "_" + str(clip_count+1) + ".tfrecords")
+      else:
+        filename = os.path.join(destination_path, name + ".tfrecords")
       print('Writing', filename)
       writer = tf.python_io.TFRecordWriter(filename)
       # filename = os.path.join(destination_path, name+".tfrecords")
@@ -413,7 +415,7 @@ if __name__ == "__main__":
     input_source_dir = "/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/inputs"
     label_source_dir = "/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/labels"
   elif options.machine == 1:
-    destination = "/home/panda/ic/data" + options.dataset
+    destination = "/home/panda/ic/data/" + options.dataset
     input_source_dir = "/home/panda/raw_data/" + options.dataset + "/inputs"
     label_source_dir = "/home/panda/raw_data/" + options.dataset + "/labels"
   else:
