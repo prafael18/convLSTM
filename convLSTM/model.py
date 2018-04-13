@@ -117,43 +117,11 @@ def inference(inputs, name=None):
             pool_size=[2,2],
             strides=[2,2],
             padding="SAME")
-    print("After all conv and max_pool ops:", net)
-<<<<<<< HEAD
-    net = convLSTM(net, 64,
-            output_channels=8,
-||||||| merged common ancestors
-    net = convLSTM(net,
-            output_channels=128,
-=======
     net = convLSTM(net, 32,
             output_channels=128,
->>>>>>> 7d75542302d205eedc66f5f9811d688b7eb6443b
             kernel_shape=[5, 5],
             initializers=tf.contrib.layers.xavier_initializer(),
             forget_bias=1.0)
-<<<<<<< HEAD
-    # net = convLSTM(net, 128,
-    #         output_channels=64,
-    #         kernel_shape=[5,5],
-    #         initializers=tf.contrib.layers.xavier_initializer(),
-    #         forget_bias=1.0)
-    # net = convLSTM(net, 64,
-    #         output_channels=64,
-    #         kernel_shape=[5,5],
-    #         initializers=tf.contrib.layers.xavier_initializer(),
-    #         forget_bias=1.0)
-||||||| merged common ancestors
-    net = convLSTM(net,
-            output_channels=64,
-            kernel_shape=[5,5],
-            initializers=tf.contrib.layers.xavier_initializer(),
-            forget_bias=1.0)
-    net = convLSTM(net,
-            output_channels=64,
-            kernel_shape=[5,5],
-            initializers=tf.contrib.layers.xavier_initializer(),
-            forget_bias=1.0)
-=======
     net = convLSTM(net, 128,
             output_channels=64,
             kernel_shape=[5,5],
@@ -164,7 +132,6 @@ def inference(inputs, name=None):
             kernel_shape=[5,5],
             initializers=tf.contrib.layers.xavier_initializer(),
             forget_bias=1.0)
->>>>>>> 7d75542302d205eedc66f5f9811d688b7eb6443b
     net = framewise_op(net, upconv,
             filters=32,
             kernel_size=[5,5],

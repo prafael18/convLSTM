@@ -1,25 +1,61 @@
 
 train = {
     "machine_index": 0,
-    "train_tfrecords_filename": ["/home/rafael/Documents/unicamp/ic/src/data/train/tfr/fs_fnorm/*",
-                                 "/home/panda/ic/data/train/fnorm/*"],
-    "val_tfrecords_filename": ["/home/rafael/Documents/unicamp/ic/src/data/val/tfr/val_fs_fnorm_rgb.tfrecords",
-                               "/home/panda/ic/data/val/val_fnorm_raw_lab.tfrecords"],
-    "save_model_dir": ["/home/rafael/Documents/unicamp/ic/src/save", "home/panda/ic/save"],
-    "load_model_dir": [None, None],
-    "result_dir":[None, "/home/panda/ic/results"],
-    "writer_dir": ["/home/rafael/Documents/unicamp/ic/src/log", "/home/panda/ic/log"],
+
+    "train_tfrecords_filename":
+        ["/home/rafael/Documents/unicamp/ic/src/data/train/tfr/fs_fnorm/*",
+         "/home/panda/ic/data/train/fnorm/*",
+         "/home/storage_local/panda/data/train/train_raw_rgb.tfrecords"],
+
+    "val_tfrecords_filename":
+        ["/home/rafael/Documents/unicamp/ic/src/data/val/tfr/val_fs_fnorm_rgb.tfrecords",
+         "/home/panda/ic/data/val/val_fnorm_raw_lab.tfrecords",
+         "/home/storage_local/panda/data/val/val_raw_rgb.tfrecords"],
+
+    "save_model_dir":
+        ["/home/rafael/Documents/unicamp/ic/src/save",
+         "home/panda/ic/save"
+         "/home/storage_local/panda/save"],
+
+    "load_model_dir":
+        [None,
+         None,
+         None],
+
+    "result_dir":
+        [None,
+         "/home/panda/ic/results",
+         None],
+
+    "writer_dir":
+        ["/home/rafael/Documents/unicamp/ic/src/log",
+         "/home/panda/ic/log",
+         "/home/storage_local/panda/log"],
+
+    "val_result_file":
+        ["/home/rafael/Documents/unicamp/ic/src/log/val_results.txt",
+         "/home/panda/ic/log/val_results.txt",
+         "/home/storage_local/panda/log/val_results.txt"],
+
+    "train_result_file":
+        ["/home/rafael/Documents/unicamp/ic/src/log/train_results.txt",
+         "/home/panda/ic/log/train_results.txt",
+         "/home/storage_local/panda/log/train_results.txt"],
+
+    "status_file":
+        ["/home/rafael/Documents/unicamp/ic/src/log/status.txt",
+         "/home/panda/ic/log/status.txt",
+         "/home/storage_local/panda/log/status.txt"],
+
     "num_epochs": 500,
     "batch_size": 5,
     "image_height": 135,
     "image_width": 240,
     "input_channels": 3,
     "label_channels": 1,
-    "val_epochs": 1,
-    "val_result_file": ["/home/rafael/Documents/unicamp/ic/src/log/val_results.txt", "/home/panda/ic/log/val_results.txt"],
-    "train_result_file": ["/home/rafael/Documents/unicamp/ic/src/log/train_results.txt", "/home/panda/ic/log/train_results.txt"],
-    "status_file": ["/home/rafael/Documents/unicamp/ic/src/log/status.txt", "/home/panda/ic/log/status.txt"]
+    "val_epochs": 1
 }
+
 
 
 eval = {
