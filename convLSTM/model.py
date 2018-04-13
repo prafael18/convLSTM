@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import shutil
 import os
-import cv2
+# import cv2
 
 
 # input has shape [batch_size, time_steps, img_size_x, img_size_y, channels]
@@ -57,7 +57,9 @@ def resize(input, **kwargs):
 def convLSTM(input, input_channels, **kwargs):
     with tf.name_scope("convLSTM") as scope:
         print ("ConvLSTM input_shape: ", input.shape)
-        #input_shape = input.shape.as_list()[2:]
+        print("Batch_size: ", tf.shape(input)[0])
+        # # input_shape = input.shape.as_list()[2:]
+        # input_shape = [34, 60, kwargs["output_channels"]]
         input_shape = [34, 60, input_channels]
         lstmCell = tf.contrib.rnn.Conv2DLSTMCell(
             input_shape=input_shape, **kwargs)
@@ -115,7 +117,6 @@ def inference(inputs, name=None):
             pool_size=[2,2],
             strides=[2,2],
             padding="SAME")
-    print("After all conv and max_pool ops:", net)
     net = convLSTM(net, 32,
             output_channels=128,
             kernel_shape=[5, 5],

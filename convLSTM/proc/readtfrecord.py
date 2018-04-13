@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
-tfrecords_filename = '/home/rafael/Documents/unicamp/ic/src/data/test/tfr/test_fs_fnorm_rgb.tfrecords'
+tfrecords_filename = '/home/rafael/Documents/unicamp/ic/src/data/val/tfr/val_fs_raw_rgb_1_1.tfrecords'
 
 # def feed
 # def read_and_decode():
@@ -47,7 +47,7 @@ def readTFRecord(tfrecords_filename):
                      .value[0])
         # print("Number of frames in this record is ", frames)
         input_byte_list = example.features.feature['input'].bytes_list.value
-        input_string_list = [np.fromstring(input_string, dtype=np.float32) for input_string in input_byte_list]
+        input_string_list = [np.fromstring(input_string, dtype=np.uint8) for input_string in input_byte_list]
         input_video = np.reshape(input_string_list, (frames, height, width, -1))
         # print("Video shape = ", input_video.shape)
 
@@ -55,8 +55,8 @@ def readTFRecord(tfrecords_filename):
         label_string_list = [np.fromstring(label_string, dtype=np.float32) for label_string in label_byte_list]
         label_video = np.reshape(label_string_list, (frames, height, width, -1))
 
-        if i == 5:
-            pixel_intensity(label_video)
+        if i == 0:
+            pixel_intensity(input_video)
             #
             # plt.subplot(211)
             # plt.title("Input")
