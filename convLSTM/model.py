@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import shutil
 import os
-import cv2
+# import cv2
 
 
 # input has shape [batch_size, time_steps, img_size_x, img_size_y, channels]
@@ -54,13 +54,14 @@ def resize(input, **kwargs):
         print("Resize output shape = ", output)
     return output
 
-def convLSTM(input, **kwargs):
+def convLSTM(input, input_channels, **kwargs):
     with tf.name_scope("convLSTM") as scope:
         print("Current scope is: ", scope)
         print ("ConvLSTM input_shape: ", input.shape)
         print("Batch_size: ", tf.shape(input)[0])
         # # input_shape = input.shape.as_list()[2:]
-        input_shape = [34, 60, kwargs["output_channels"]]
+        # input_shape = [34, 60, kwargs["output_channels"]]
+        input_shape = [34, 60, input_channels]
         lstmCell = tf.contrib.rnn.Conv2DLSTMCell(
             input_shape=input_shape, **kwargs)
 
@@ -118,21 +119,21 @@ def inference(inputs, name=None):
             strides=[2,2],
             padding="SAME")
     print("After all conv and max_pool ops:", net)
-    net = convLSTM(net,
-            output_channels=128,
+    net = convLSTM(net, 64,
+            output_channels=8,
             kernel_shape=[5, 5],
             initializers=tf.contrib.layers.xavier_initializer(),
             forget_bias=1.0)
-    net = convLSTM(net,
-            output_channels=64,
-            kernel_shape=[5,5],
-            initializers=tf.contrib.layers.xavier_initializer(),
-            forget_bias=1.0)
-    net = convLSTM(net,
-            output_channels=64,
-            kernel_shape=[5,5],
-            initializers=tf.contrib.layers.xavier_initializer(),
-            forget_bias=1.0)
+    # net = convLSTM(net, 128,
+    #         output_channels=64,
+    #         kernel_shape=[5,5],
+    #         initializers=tf.contrib.layers.xavier_initializer(),
+    #         forget_bias=1.0)
+    # net = convLSTM(net, 64,
+    #         output_channels=64,
+    #         kernel_shape=[5,5],
+    #         initializers=tf.contrib.layers.xavier_initializer(),
+    #         forget_bias=1.0)
     net = framewise_op(net, upconv,
             filters=64,
             kernel_size=[5,5],

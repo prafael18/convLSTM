@@ -27,8 +27,8 @@ flags.DEFINE_integer('n_videos_in_record', 40, 'Number of videos stored in one s
                                                'reducing the number of videos per record might aid with any memory problems.')
 flags.DEFINE_string('file_suffix', "*.avi", 'defines the video file type, e.g. .mp4')
 
-STD_SCORE = 0
-FEAT_SCALING = 1
+STD_SCORE = 1
+FEAT_SCALING = 0
 
 #Data specific flags
 flags.DEFINE_integer('width_video', 240, 'the desired width of the videos to be stored in tfrecord')
@@ -42,11 +42,12 @@ flags.DEFINE_integer('max_frames_per_video', 15, 'maximum frames per clip')
 set = "val"
 #Flags that require adjustments
 flags.DEFINE_integer('clips_per_file', 1000, 'Number of clips per tf record.')
+# flags.DEFINE_string('destination', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/tfr/lab_fs_fnorm', 'Directory for storing tf records')
 flags.DEFINE_string('destination', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/tfr/', 'Directory for storing tf records')
 flags.DEFINE_string('input_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/inputs/', 'Directory with input video files')
 flags.DEFINE_string('label_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/labels/', 'Directory with label video files')
-flags.DEFINE_string('dataset_name', set+"_fs_fnorm_rgb", 'name used to create tfrecord file')
-flags.DEFINE_integer('norm', 1, 'Integer indicating normalization type (x - x.mean)/x.std:'
+flags.DEFINE_string('dataset_name', set+"_ss_vnorm_lab", 'name used to create tfrecord file')
+flags.DEFINE_integer('norm', 2, 'Integer indicating normalization type (x - x.mean)/x.std:'
                                 '0 - raw'
                                 '1 - frame norm'
                                 '2 - clip norm')
@@ -110,9 +111,10 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
       if writer is not None:
         writer.close()
 
-      filename = os.path.join(destination_path, name+".tfrecords")
+      filename = os.path.join(destination_path, name + "_" + str(current_record_num+1) + "_" + str(clip_count+1) + ".tfrecords")
       print('Writing', filename)
       writer = tf.python_io.TFRecordWriter(filename)
+      # filename = os.path.join(destination_path, name+".tfrecords")
       #    name + "_" + str(current_record_num+1) + "_" + str(videoCount+1) + ".tfrecords")
       # '_of_' + str(total_record_num) + '.tfrecords')
 
@@ -231,7 +233,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         # Change image colorspace (n_channels is 3 for input and 1 for label)
         frame = frame.astype(np.float32)
         if input:
-          image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+          image = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         else:
           image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
