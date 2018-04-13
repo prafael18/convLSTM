@@ -99,10 +99,11 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
                 # print(labels.shape)
                 # print(labels[f][0,:,:,0].shape)
                 # imsave("out/epoch_{}_batch_{}_input_{}.png".format(epoch+1, count, f), labels[f][0,:,:,0])
-            _, loss_val, summary = sess.run([train_op, loss, summary_op],
-                                            feed_dict=feed_dict,
-                                            options=run_options,
-                                            run_metadata=run_metadata)
+            #_, loss_val, summary = sess.run([train_op, loss, summary_op],
+            #                                feed_dict=feed_dict,
+            #                                options=run_options,
+            #                                run_metadata=run_metadata)
+            _, loss_val = sess.run([train_op, loss], feed_dict = feed_dict)
             batch_loss.append(loss_val)
             count+=1
         except tf.errors.OutOfRangeError:
@@ -113,9 +114,9 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
                 f.write("Epoch {}: TIME = {:.3f} LOSS = {:.3f}\n".format(epoch, time.time()-start_time, np.mean(np.array(batch_loss))))
             print("Epoch {} completed in {} seconds.\nAverage cross-entropy loss is: {:.3}"
                   .format(epoch, time.time() - start_time, np.mean(np.array(batch_loss))))
-            if epoch%10 == 0:
-                train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
-            train_writer.add_summary(summary, epoch)
+            #if epoch%10 == 0:
+            #    train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
+            #train_writer.add_summary(summary, epoch)
             break
     return
 
@@ -202,8 +203,8 @@ def train():
     train_filenames = gfile.Glob(train_tfrecords_filename)
     val_filenames = gfile.Glob(val_tfrecords_filename)
 
-    print("Train filenames:\n", train_filenames)
-    print("Val filenames:\n", val_filenames)
+    #print("Train filenames:\n", train_filenames)
+    #print("Val filenames:\n", val_filenames)
 
     if load_model_dir:
         model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])

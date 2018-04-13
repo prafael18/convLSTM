@@ -42,11 +42,11 @@ flags.DEFINE_integer('max_frames_per_video', 15, 'maximum frames per clip')
 set = "val"
 #Flags that require adjustments
 flags.DEFINE_integer('clips_per_file', 1000, 'Number of clips per tf record.')
-flags.DEFINE_string('destination', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/tfr/', 'Directory for storing tf records')
-flags.DEFINE_string('input_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/inputs/', 'Directory with input video files')
-flags.DEFINE_string('label_source', '/home/rafael/Documents/unicamp/ic/src/data/'+set+'/labels/', 'Directory with label video files')
-flags.DEFINE_string('dataset_name', set+"_fs_fnorm_rgb", 'name used to create tfrecord file')
-flags.DEFINE_integer('norm', 1, 'Integer indicating normalization type (x - x.mean)/x.std:'
+flags.DEFINE_string('destination', '/home/panda/ic/data/'+set, 'Directory for storing tf records')
+flags.DEFINE_string('input_source', '/home/panda/raw_data/'+set+'/inputs/', 'Directory with input video files')
+flags.DEFINE_string('label_source', '/home/panda/raw_data/'+set+'/labels/', 'Directory with label video files')
+flags.DEFINE_string('dataset_name', set+"_fs_fnorm_lab", 'name used to create tfrecord file')
+flags.DEFINE_integer('norm', 0, 'Integer indicating normalization type (x - x.mean)/x.std:'
                                 '0 - raw'
                                 '1 - frame norm'
                                 '2 - clip norm')
@@ -231,7 +231,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         # Change image colorspace (n_channels is 3 for input and 1 for label)
         frame = frame.astype(np.float32)
         if input:
-          image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+          image = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         else:
           image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
