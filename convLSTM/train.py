@@ -207,8 +207,8 @@ def train():
     train_filenames = gfile.Glob(train_tfrecords_filename)
     val_filenames = gfile.Glob(val_tfrecords_filename)
 
-    print("Train filenames:\n", train_filenames)
-    print("Val filenames:\n", val_filenames)
+    #print("Train filenames:\n", train_filenames)
+    #print("Val filenames:\n", val_filenames)
 
     if load_model_dir:
         model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])

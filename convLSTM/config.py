@@ -7,6 +7,7 @@ train = {
                                "/home/panda/ic/data/val/val_fnorm_raw_lab.tfrecords"],
     "save_model_dir": ["/home/rafael/Documents/unicamp/ic/src/save", "home/panda/ic/save"],
     "load_model_dir": [None, None],
+    "result_dir":[None, "/home/panda/ic/results"],
     "writer_dir": ["/home/rafael/Documents/unicamp/ic/src/log", "/home/panda/ic/log"],
     "num_epochs": 500,
     "batch_size": 5,
