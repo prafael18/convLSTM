@@ -17,6 +17,7 @@ data/
 #data/train/labels/
 #data/val/labels/
 
+scp/
 log/
 save/
 results/
