@@ -83,7 +83,7 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
     if clip_count%clips_per_file == 0:
       if writer is not None:
         writer.close()
-      if num_clips > 1:
+      if total_record_num > 1:
         filename = os.path.join(destination_path, name + "_" + str(current_record_num+1) + "_" + str(clip_count+1) + ".tfrecords")
       else:
         filename = os.path.join(destination_path, name + ".tfrecords")
@@ -398,10 +398,10 @@ if __name__ == "__main__":
   else:
     exit(1)
 
-  if options.num_files == "single":
+  if options.num_files == "many":
     clips_per_file = 1
     videos_per_record = 1
-  elif options.num_files == "many":
+  elif options.num_files == "single":
     clips_per_file = 1000
     videos_per_record = 40
   else:
