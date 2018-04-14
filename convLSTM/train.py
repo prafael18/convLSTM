@@ -4,8 +4,7 @@ import tensorflow as tf
 from tensorflow.python.platform import gfile
 import numpy as np
 import time
-import os
-from scipy.misc import imsave
+import datetime
 
 import input
 import model
@@ -30,7 +29,7 @@ train_result_file = config.train["train_result_file"][i]
 status_file = config.train["status_file"][i]
 
 
-def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values):
+def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values, val_time):
 
     start_time = time.time()
     sess.run(initializer)
@@ -65,9 +64,10 @@ def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values):
             cc_value = np.mean(np.array(cc_list))
             mse_value = np.mean(np.array(mse_list))
             loss_value = np.mean(np.array(loss_list))
+            val_time.append(time.time()-start_time)
 
             print()
-            print("Finished validating in {:.3f}s".format(time.time()-start_time))
+            print("Finished validating in {:.3f}s".format(val_time[-1]))
             print("Epoch {}'s loss in validation set: {:.4f}".format(epoch, loss_value))
             print("SIM = {:.3f}\nCC = {:.3f}\nMSE = {:.3f}".format(sim_value, cc_value, mse_value))
             print()
@@ -79,7 +79,7 @@ def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values):
 
 
 def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
-                    feed_values, summary_op, train_writer=None, run_options=None, run_metadata=None):
+                    feed_values, train_time, summary_op, train_writer=None, run_options=None, run_metadata=None):
 
     run_metadata=None
     run_options=None
@@ -114,10 +114,12 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
             increment_epoch = epoch_counter.assign_add(1)
             sess.run([increment_epoch])
             epoch = epoch_counter.eval()
+            epoch_time = time.time() -start_time
             with open(train_result_file, "a") as f:
-                f.write("Epoch {}: TIME = {:.3f} LOSS = {:.3f}\n".format(epoch, time.time()-start_time, np.mean(np.array(batch_loss))))
+                f.write("Epoch {}: TIME = {:.3f} LOSS = {:.3f}\n".format(epoch, epoch_time, np.mean(np.array(batch_loss))))
             print("Epoch {} completed in {} seconds.\nAverage cross-entropy loss is: {:.3}"
-                  .format(epoch, time.time() - start_time, np.mean(np.array(batch_loss))))
+                  .format(epoch, epoch_time, np.mean(np.array(batch_loss))))
+            train_time.append(epoch_time)
             # if epoch%1 == 0:
             #     train_writer.add_run_metadata(run_metadata, "Epoch {}".format(epoch))
             # train_writer.add_summary(summary, epoch)
@@ -261,6 +263,8 @@ def train():
     run_metadata = tf.RunMetadata()
 
     worse_epochs = 0
+    val_time = []
+    train_time = []
 
     for epoch in range(num_epochs):
         run_train_epoch(initializer=train_initializer,
@@ -269,6 +273,7 @@ def train():
                         loss=loss,
                         feed_keys=[input_x, label_y],
                         feed_values=[train_input, train_label],
+                        train_time=train_time,
                         summary_op=merged_summary,
                         train_writer=train_writer,
                         run_options=run_options,
@@ -280,8 +285,8 @@ def train():
                     logits=logits,
                     loss=loss,
                     feed_keys=[input_x, label_y],
-                    feed_values=[val_input, val_label])
-
+                    feed_values=[val_input, val_label],
+                    val_time=val_time)
             if val_loss < BEST_LOSS:
                 BEST_LOSS = val_loss
                 worse_epochs = 0
@@ -298,6 +303,10 @@ def train():
                     with open(status_file, "a") as f:
                         f.write("Previous {} epochs have shown no improvements.\n"
                                 "Stopping training is advised.\n".format(worse_epochs))
+
+        time_left = (np.array(train_time).mean()+np.array(val_time).mean())*(num_epochs-(epoch+1))
+        print("Training time left = ", str(datetime.timedelta(seconds=time_left)))
+
 
 
 
