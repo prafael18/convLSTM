@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import train
 
 
 def parse_function(serialized_example):
@@ -25,7 +25,9 @@ def parse_function(serialized_example):
     dense_input = tf.sparse_tensor_to_dense(features['input'], default_value='*')
     dense_label = tf.sparse_tensor_to_dense(features['label'], default_value='*')
 
-    input_list = tf.decode_raw(dense_input, tf.uint8)
+    in_dtype = tf.float32 if norm_type else in_dtype = tf.uint8
+
+    input_list = tf.decode_raw(dense_input, in_dtype)
     label_list = tf.decode_raw(dense_label, tf.float32)
 
     #Height and width are dynamically calculated.

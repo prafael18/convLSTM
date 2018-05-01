@@ -5,6 +5,8 @@ from tensorflow.python.platform import gfile
 import numpy as np
 import time
 import datetime
+import optparse
+import os
 
 import input
 import model
@@ -12,21 +14,23 @@ import config
 import infer
 
 i = config.train["machine_index"]
-train_tfrecords_filename = config.train["train_tfrecords_filename"][i]
-val_tfrecords_filename = config.train["val_tfrecords_filename"][i]
-save_model_dir = config.train["save_model_dir"][i]
-load_model_dir = config.train["load_model_dir"][i]
+train_tfrecords_filename = None
+val_tfrecords_filename = None
+save_model_dir = None
+load_model_dir = None
+val_result_file = None
+train_result_file = None
+status_file = None
+writer_dir = None
+norm_type = None
+
 num_epochs = config.train["num_epochs"]
 batch_size = config.train["batch_size"]
 image_height = config.train["image_height"]
 image_width = config.train["image_width"]
 input_channels = config.train["input_channels"]
 label_channels = config.train["label_channels"]
-writer_dir = config.train["writer_dir"][i]
 val_epochs = config.train["val_epochs"]
-val_result_file = config.train["val_result_file"][i]
-train_result_file = config.train["train_result_file"][i]
-status_file = config.train["status_file"][i]
 
 
 def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values, val_time):
@@ -198,7 +202,7 @@ def get_data(load_model, filenames, batch_size, names=None):
 
         return input_batch, label_batch, initializer
 
-def train():
+def train(norm_type):
     BEST_LOSS = 9999
 
     """Train frames for a number of steps"""
@@ -308,8 +312,67 @@ def train():
         print("Training time left = ", str(datetime.timedelta(seconds=time_left)))
 
 
-
-
 if __name__ == "__main__":
-    with tf.Session() as sess:
-        train()
+
+    parser = optparse.OptionParser()
+
+    parser.add_option("-m", "--machine",
+                      action="store", type="int", dest="machine",
+                      help="Machine index where execution takes place. 0 - local, 1 - neuron0, 2 - neuron1.",
+                      default=0)
+    parser.add_option("-g", "--gpu",
+                      action="store", type="float", dest="gpu",
+                      help="Float indicating percent gpu usage. Ranges between [0, 1.0].",
+                      default=0)
+    parser.add_option("-c", "--color_space",
+                      action="store", type="string", dest="color_space",
+                      help="Color space to which we should convert input data (by default labels will be converted to grayscale)."
+                           "Accepts rgb and lab.",
+                      default="rgb")
+    parser.add_option("-t", "--norm_type",
+                      action="store", type="string", dest="norm_type",
+                      help="Normalization type for input data. May choose between standard score (ss) and feature scale (fs).",
+                      default=None)
+    parser.add_option("-n", "--norm_dim",
+                      action="store", type="string", dest="norm_dim",
+                      help="Normalization dimension for input data. May choose between clip norm (vnorm), frame norm (fnorm) and raw.",
+                      default="raw")
+
+    options, args = parser.parse_args()
+
+    m = options.machine
+    if options.norm_type == "ss" or options.norm_type == "fs":
+        norm_type = 1
+    else:
+        norm_type = 0
+
+    val_tfrecord_name = "{}_{}_{}".format("val",
+        str(options.norm_type + "_" + options.norm_dim) if norm_type else options.norm_dim,
+        options.color_space)
+    train_tfrecord_name = "{}_{}/*".format(options.color_space,
+        str(options.norm_type + "_" + options.norm_dim) if norm_type else options.norm_dim)
+
+    train_tfrecords_filename = os.path.join(config.train["train_tfrecords_filename"][m], train_tfrecord_name)
+    val_tfrecords_filename = os.path.join(config.train["val_tfrecords_filename"][m], val_tfrecord_name)
+
+    save_model_dir = config.train["save_model_dir"][m]
+    load_model_dir = config.train["load_model_dir"][m]
+    writer_dir = config.train["writer_dir"][m]
+    val_result_file = config.train["val_result_file"][m]
+    train_result_file = config.train["train_result_file"][m]
+    status_file = config.train["status_file"][m]
+
+    print("Options selected:"
+          " machine = {}"
+          " gpu = {}"
+          " train_dir = {}"
+          " val_filename = {}"
+          " colorspace = {}"
+          " norm_type = {}"
+          " norm_dim = {}".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
+                                  options.color_space, options.norm_type, options.norm_dim))
+
+    gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=options.gpu)
+
+    with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+        train(norm_type)
