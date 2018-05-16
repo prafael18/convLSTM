@@ -196,7 +196,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         continue
       elif frame.any():
         # Change image colorspace (n_channels is 3 for input and 1 for label)
-        frame = frame.astype(np.float32)
+        # frame = frame.astype(np.float32)
         if input:
           if colorspace:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -407,8 +407,14 @@ if __name__ == "__main__":
   else:
     exit(1)
 
-  tfrecord_name = "{}_{}_{}".format(options.dataset, str(options.norm_type + "_" + options.norm_dim) if norm_type else options.norm_dim,
-                                    options.color_space)
+  print("norm_type is {}".format(options.norm_type))
+
+  if not options.norm_type:
+    tfrecord_name = "{}_{}_{}".format(options.dataset, options.norm_dim, options.color_space)
+  else:
+    tfrecord_name = "{}_{}_{}_{}".format(options.dataset, options.norm_type, options.norm_dim, options.color_space)
+
+  print("tfrecord_name is {}".format(tfrecord_name))
 
   if options.machine == 0:
     destination = "/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/tfr"

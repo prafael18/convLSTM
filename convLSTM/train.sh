@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-./train.py --machine=0 --gpu=0.75 --color_space=rgb --norm_type=raw | tee -a stdout.txt
+python3.5 train.py --machine=1 --gpu=.75 --color_space=lab --norm_type=fs --norm_dim=fnorm | tee -a stdout.txt

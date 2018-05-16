@@ -25,7 +25,10 @@ def parse_function(serialized_example):
     dense_input = tf.sparse_tensor_to_dense(features['input'], default_value='*')
     dense_label = tf.sparse_tensor_to_dense(features['label'], default_value='*')
 
-    in_dtype = tf.float32 if norm_type else in_dtype = tf.uint8
+    if norm_type:
+        in_dtype = tf.float32
+    else:
+        in_dtype = tf.uint8
 
     input_list = tf.decode_raw(dense_input, in_dtype)
     label_list = tf.decode_raw(dense_label, tf.float32)
