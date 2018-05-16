@@ -346,7 +346,7 @@ if __name__ == "__main__":
     else:
         norm_type = 0
 
-    val_tfrecord_name = "{}_{}_{}".format("val",
+    val_tfrecord_name = "{}_{}_{}.tfrecords".format("val",
         str(options.norm_type + "_" + options.norm_dim) if norm_type else options.norm_dim,
         options.color_space)
     train_tfrecord_name = "{}_{}/*".format(options.color_space,
@@ -362,14 +362,14 @@ if __name__ == "__main__":
     train_result_file = config.train["train_result_file"][m]
     status_file = config.train["status_file"][m]
 
-    print("Options selected:"
-          " machine = {}"
-          " gpu = {}"
-          " train_dir = {}"
-          " val_filename = {}"
-          " colorspace = {}"
-          " norm_type = {}"
-          " norm_dim = {}".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
+    print("Options selected:\n"
+          " machine = {}\n"
+          " gpu = {}\n"
+          " train_dir = {}\n"
+          " val_filename = {}\n"
+          " colorspace = {}\n"
+          " norm_type = {}\n"
+          " norm_dim = {}\n".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
                                   options.color_space, options.norm_type, options.norm_dim))
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=options.gpu)

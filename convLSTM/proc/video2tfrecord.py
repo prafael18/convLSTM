@@ -10,8 +10,8 @@
 
 
 from tensorflow.python.platform import gfile
-
-import cv2 as cv2
+from matplotlib import pyplot as plt
+import cv2
 import numpy as np
 import tensorflow as tf
 import optparse
@@ -24,6 +24,7 @@ FRAME_NORM = 1
 RAW = 0
 RGB = 1
 LAB = 0
+
 
 def _int64_feature(value):
   return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -89,9 +90,6 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
         filename = os.path.join(destination_path, name + ".tfrecords")
       print('Writing', filename)
       writer = tf.python_io.TFRecordWriter(filename)
-      # filename = os.path.join(destination_path, name+".tfrecords")
-      #    name + "_" + str(current_record_num+1) + "_" + str(videoCount+1) + ".tfrecords")
-      # '_of_' + str(total_record_num) + '.tfrecords')
 
     input_list = []
     label_list = []
@@ -104,7 +102,6 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
       label_list.append(label_data[clip_count][imageCount, :, :, :]
                         .astype(label_dtype)
                         .tostring())
-
 
     feature['input'] = _bytes_feature(input_list)
     feature['label'] = _bytes_feature(label_list)
@@ -127,13 +124,24 @@ def normalize(n_array, type):
   if type == STD_SCORE:
     n_array -= np.mean(n_array, axis=0)
     n_array /= np.std(n_array, axis=0)
-  if type == FT_SCALE:
+  elif type == FT_SCALE:
     min = np.min(n_array, axis=0)
     max = np.max(n_array, axis=0)
     if max.all() > 0:
       n_array = (n_array-min)/(max-min)
   n_array = n_array.reshape(init_shape)
   return n_array
+
+
+def plot_frame(prev_image, new_image, title):
+  prev_image = prev_image.astype(np.uint8)
+  new_image = new_image.astype(np.uint8)
+  plt.title(title)
+  plt.subplot(211)
+  plt.imshow(prev_image)
+  plt.subplot(212)
+  plt.imshow(new_image)
+  plt.show()
 
 
 def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max_frames_per_clip, input, norm_dim, norm_type,
@@ -196,12 +204,13 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         continue
       elif frame.any():
         # Change image colorspace (n_channels is 3 for input and 1 for label)
-        frame = frame.astype(np.float32)
         if input:
           if colorspace:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
           else:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+            # if total_frames_count == 1:
+              # plot_frame(prev_image=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), new_image=image, title="RGB2LAB")
         else:
           image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
@@ -316,12 +325,12 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
 
     #When calling convert_video_to_numpy with input=False, returns a list of the frames in the label data
     #which is used to ensure the number of frames processed in the label videos is the same as the input videos.
-    label_data, clip_list = convert_video_to_numpy(record_num = i, filenames=label_filenames_split[i],
+    label_data, clip_list = convert_video_to_numpy(record_num=i, filenames=label_filenames_split[i],
                                                     width=width, height=height, n_channels=label_channels, max_frames_per_clip=max_frames_per_video,
                                                     input=False, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace)
 
     #When input=True, an empty frame_list is returned.
-    input_data, _ = convert_video_to_numpy(record_num = i, filenames=input_filenames_split[i],
+    input_data, _ = convert_video_to_numpy(record_num=i, filenames=input_filenames_split[i],
                                            width=width, height=height, n_channels=input_channels, max_frames_per_clip=max_frames_per_video,
                                            input=True, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, clip_list=clip_list)
 
@@ -369,7 +378,8 @@ if __name__ == "__main__":
 
   options, args = parser.parse_args()
 
-  #Dynamic variables
+# Dynamically set variables
+
   if options.norm_type == "ss":
     norm_type = STD_SCORE
   elif options.norm_type == "fs":
@@ -418,6 +428,10 @@ if __name__ == "__main__":
     destination = "/home/panda/ic/data/" + options.dataset
     input_source_dir = "/home/panda/raw_data/" + options.dataset + "/inputs"
     label_source_dir = "/home/panda/raw_data/" + options.dataset + "/labels"
+  elif options.machine == 2:
+    destination = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/tfr"
+    input_source_dir = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/input"
+    label_source_dir = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/label"
   else:
     exit(1)
 
@@ -427,7 +441,7 @@ if __name__ == "__main__":
       os.mkdir(destination)
 
 
-  #Static variables
+# Static variables
   width_video = 240
   height_video = 135
   input_channels = 3

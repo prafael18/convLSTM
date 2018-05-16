@@ -5,10 +5,12 @@ convLSTM/proc/__pycache__/
 #IDE specific files
 .idea/
 
-
+#Local tests
+convLSTM/proc/test
 
 #Raw video data (*.avi)
 data/
+
 #data/test/inputs/
 #data/train/inputs/
 #data/val/inputs/

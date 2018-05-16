@@ -1,8 +1,18 @@
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+from tensorflow.python.platform import gfile
+import cv2
+import os
 
-tfrecords_filename = '/home/rafael/Documents/unicamp/ic/src/data/val/tfr/val_fs_raw_rgb_1_1.tfrecords'
+# tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/data/scp/tfr/*'
+# save_path = '/home/rafael/Documents/unicamp/ic/src/data/scp/videos'
+
+tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/tfr/*'
+save_path = '/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test'
+
+height = None
+width = None
 
 # def feed
 # def read_and_decode():
@@ -29,10 +39,40 @@ def stats(input_video):
                   .format(frame+1, channel+1, np.std(input_video[frame][:, :, channel]),
                           np.mean(input_video[frame][ :, :, channel])))
 
-def readTFRecord(tfrecords_filename):
-    record_iterator = tf.python_io.tf_record_iterator(path=tfrecords_filename)
-    count = 0
-    for i, string_record in enumerate(record_iterator):
+
+def plot_video(title, input_video, label_video, height, width):
+  plt.subplot(211)
+  plt.title(title)
+  plt.imshow(input_video[0])
+  plt.subplot(212)
+  plt.title("Label")
+  plt.imshow(label_video[0].reshape(height, width), cmap="Greys_r")
+  plt.show()
+
+
+def save_video(name, input_video):
+  print("gonna save here")
+  print(input_video.shape)
+  input_video = map(input_video, 0, 255)
+  fourcc = cv2.VideoWriter_fourcc(*'XVID')
+  out = cv2.VideoWriter(os.path.join(save_path, name + ".avi"), fourcc, 3, (240, 135))
+  for frame in input_video:
+    frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+    out.write(frame)
+  out.release()
+
+def map(input_video, output_start, output_end):
+  slope = (output_end - output_start) / (np.max(input_video)-np.min(input_video))
+  output = output_start + slope * (input_video - np.min(input_video))
+  return np.uint8(output)
+
+def readTFRecord(filepaths):
+
+    for path in filepaths:
+      record_iterator = tf.python_io.tf_record_iterator(path=path)
+      filename = path.split('/')[-1]
+
+      for i, string_record in enumerate(record_iterator):
         example = tf.train.Example()
         example.ParseFromString(string_record)
         height = int(example.features.feature['height']
@@ -45,36 +85,53 @@ def readTFRecord(tfrecords_filename):
         frames = int(example.features.feature['num_frames']
                      .int64_list
                      .value[0])
-        # print("Number of frames in this record is ", frames)
+        print("Number of frames in this record is ", frames)
+
+        if "ss" in filename or "fs" in filename:
+          dtype = np.float32
+        else:
+          dtype = np.uint8
+
+        print(filename)
         input_byte_list = example.features.feature['input'].bytes_list.value
-        input_string_list = [np.fromstring(input_string, dtype=np.uint8) for input_string in input_byte_list]
+        input_string_list = [np.fromstring(input_string, dtype=dtype) for input_string in input_byte_list]
         input_video = np.reshape(input_string_list, (frames, height, width, -1))
-        # print("Video shape = ", input_video.shape)
 
         label_byte_list = example.features.feature['label'].bytes_list.value
         label_string_list = [np.fromstring(label_string, dtype=np.float32) for label_string in label_byte_list]
         label_video = np.reshape(label_string_list, (frames, height, width, -1))
 
-        if i == 0:
-            pixel_intensity(input_video)
-            #
-            # plt.subplot(211)
-            # plt.title("Input")
-            # plt.imshow(input_video[0])
-            # plt.subplot(212)
-            # plt.title("Label")
-            # plt.imshow(label_video[0].reshape(height, width), cmap="Greys_r")
-            # plt.show()
+        # if i == 0:
+        pixel_intensity(input_video)
+        stats(input_video)
 
-        for j in range(input_video.shape[0]):
-            if np.sum(input_video[j]) == 0:
-                print("Found frame {} input clip {} that is black".format(j, i))
-        for j in range(label_video.shape[0]):
-            if np.sum(label_video[j]) == 0:
-                print("Found frame {} in label clip {} that is black".format(j, i))
-                print(np.sum(label_video[j]))
-                plt.imshow(input_video[j].reshape((135, 240, 3)))
-                plt.show()
+        if "ss" in filename:
+          input_video = (input_video - np.min(input_video))/(np.max(input_video) - np.min(input_video))
+
+        plt.imshow(input_video[5])
+        plt.show()
+        print("Video shape = ", input_video.shape)
+
+        if "raw" in filename:
+          video_name = '_'.join(filename.split('_')[:3])
+        else:
+          video_name = '_'.join(filename.split('_')[:4])
+
+        print (video_name)
+
+        save_video(video_name, input_video)
 
 if __name__ == "__main__":
-    readTFRecord(tfrecords_filename)
+  filenames = gfile.Glob(tfrecord_path)
+  print(filenames)
+  readTFRecord(filenames)
+
+# for j in range(input_video.shape[0]):
+#     if np.sum(input_video[j]) == 0:
+#         print("Found frame {} input clip {} that is black".format(j, i))
+# for j in range(label_video.shape[0]):
+#     if np.sum(label_video[j]) == 0:
+#         print("Found frame {} in label clip {} that is black".format(j, i))
+#         print(np.sum(label_video[j]))
+#         plt.imshow(input_video[j].reshape((135, 240, 3)))
+#         plt.show()

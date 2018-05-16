@@ -120,7 +120,7 @@ def eval(epoch = None):
                     input_tensor: input_x,
                     label_tensor: label_y
                 }
-                pred, mean_loss = sess.run([activations, loss], feed_dict = feed_dict)
+                pred, mean_loss = sess.run([activations, loss], feed_dict=feed_dict)
 
                 # print(input_x.shape)
                 # print(label_y.shape)
