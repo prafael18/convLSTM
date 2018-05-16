@@ -16,62 +16,69 @@ image_width = config.eval["image_width"]
 input_channels = config.eval["input_channels"]
 label_channels = config.eval["label_channels"]
 
-def sim(pred, label):
+def sim(list, pred, label):
     warnings.simplefilter("error", RuntimeWarning)
-    #Pre-process data:
-    #(1) Normalize pred and label between 0 and 1
-    #(2) Make sure that all pixel values add up to 1
+    # Pre-process data:
+    # (1) Normalize pred and label between 0 and 1
+    # (2) Make sure that all pixel values add up to 1
     # print("Sum pred = ", np.sum(pred))
 
-    assert pred.shape[0] is label.shape[0]
-    frames = pred.shape[0]
+    num_videos = pred.shape[0]
+    num_frames = pred.shape[1]
 
     sim_list = []
 
-    for i in range(frames):
-        try:
-            pred[i] = (pred[i] - np.min(pred[i]))/(np.max(pred[i])-np.min(pred[i]))
-            pred[i] = pred[i]/np.sum(pred[i])
-            label[i] = label[i]/np.sum(label[i])
-            sim_coeff = np.minimum(pred, label)
-            sim_list = [np.sum(f) for f in sim_coeff]
-        except RuntimeWarning:
-            pass
-            # print("Failed to append frame {} to sim_list".format(i))
+    for v in range(num_videos):
+        for f in range(num_frames):
+            try:
+                pred[v][f] = (pred[v][f] - np.min(pred[v][f]))/(np.max(pred[v][f])-np.min(pred[v][f]))
+                pred[v][f] = pred[v][f]/np.sum(pred[v][f])
+                label[v][f] = label[v][f]/np.sum(label[v][f])
+                sim_coeff = np.minimum(pred[v], label[v])
+                sim_list = [np.sum(s) for s in sim_coeff]
+            except RuntimeWarning:
+                pass
+        list.append(np.mean(np.array(sim_list)))
+    return
 
-    return np.mean(np.array(sim_list))
 
-
-def cc(pred, label):
+def cc(cc_list, pred, label):
+    # Pred and label have shapes (batch_size, frames, height, width, channels)
     warnings.simplefilter("error", RuntimeWarning)
-    frames = pred.shape[0]
-    assert frames is label.shape[0]
+
+    num_videos = pred.shape[0]
+    num_frames = pred.shape[1]
 
     corr_coeff = []
+    for v in range(num_videos):
+        for f in range(num_frames):
+            try:
+                # Normalize data to have mean 0 and variance 1
+                pred[v][f] = (pred[v][f] - np.mean(pred[v][f])) / np.std(pred[v][f])
+                label[v][f] = (label[v][f] - np.mean(label[v][f])) / np.std(label[v][f])
 
-    for i in range(frames):
-        try:
-            # Normalize data to have mean 0 and variance 1
-            pred[i] = (pred[i] - np.mean(pred[i])) / np.std(pred[i])
-            label[i] = (label[i] - np.mean(label[i])) / np.std(label[i])
-
-            # Calculate correlation coefficient for every frame
-            pd = pred[i] - np.mean(pred[i])
-            ld = label[i] - np.mean(label[i])
-            corr_coeff.append((pd * ld).sum() / np.sqrt((pd * pd).sum() * (ld * ld).sum()))
-        except RuntimeWarning:
-            pass
+                # Calculate correlation coefficient for every frame
+                pd = pred[v][f] - np.mean(pred[v][f])
+                ld = label[v][f] - np.mean(label[v][f])
+                corr_coeff.append((pd * ld).sum() / np.sqrt((pd * pd).sum() * (ld * ld).sum()))
+            except RuntimeWarning:
+                pass
             # print("Failed to append frame {} to corr_coeff".format(i))
+        cc_list.append(np.mean(np.array(corr_coeff)))
+    return
 
-    return np.mean(np.array(corr_coeff))
 
-def mse(pred, label):
+def mse(mse_list, pred, label):
+
+    num_videos = pred.shape[0]
+    num_frames = pred.shape[1]
 
     mean_squared_error = []
-    for i in range(label.shape[0]):
-        mean_squared_error.append(np.mean((pred[i]-label[i])**2))
 
-    return np.mean(np.array(mean_squared_error))
+    for v in range(num_videos):
+        for f in range(num_frames):
+           mean_squared_error.append(np.mean((pred[v][f]-label[v][f])**2))
+    mse_list.append(np.mean(np.array(mean_squared_error)))
 
 def eval(epoch = None):
     warnings.simplefilter("error", RuntimeWarning)

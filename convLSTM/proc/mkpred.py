@@ -76,6 +76,7 @@ def mse(mse_list, pred, label):
            mean_squared_error.append(np.mean((pred[v][f]-label[v][f])**2))
     mse_list.append(np.mean(np.array(mean_squared_error)))
 
+
 def parse_function(serialized_example):
     """Processes an example ProtoBuf and returns input and label with shape:
         [batch_size, n_frames, height, width, channels]

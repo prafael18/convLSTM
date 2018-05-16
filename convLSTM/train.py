@@ -39,7 +39,7 @@ def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values, va
     mse_list = []
     loss_list = []
 
-    activations = tf.nn.sigmoid(logits)
+    activations = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=feed_keys[1])
 
     while True:
         try:
@@ -51,13 +51,10 @@ def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values, va
 
             pred, mean_loss = sess.run([activations, loss], feed_dict=feed_dict)
 
-            pred = np.reshape(pred[0], pred[0].shape[:3])
-            label = np.reshape(labels, labels.shape[1:4])
-
             loss_list.append(mean_loss)
-            sim_list.append(infer.sim(pred.copy(), label.copy()))
-            cc_list.append(infer.cc(pred.copy(), label.copy()))
-            mse_list.append(infer.mse(pred.copy(), label.copy()))
+            infer.sim(sim_list, pred.copy(), labels.copy())
+            infer.cc(cc_list, pred.copy(), labels.copy())
+            infer.mse(mse_list, pred.copy(), labels.copy())
 
         except tf.errors.OutOfRangeError:
             epoch = epoch_counter.eval()

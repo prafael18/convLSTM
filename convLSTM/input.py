@@ -6,7 +6,7 @@ def parse_function(serialized_example):
     """Processes an example ProtoBuf and returns input and label with shape:
         [batch_size, n_frames, height, width, channels]
     """
-    #Parse into tensors
+    # Parse into tensors
     features = tf.parse_single_example(
         serialized_example,
         features = {
@@ -25,17 +25,13 @@ def parse_function(serialized_example):
     dense_input = tf.sparse_tensor_to_dense(features['input'], default_value='*')
     dense_label = tf.sparse_tensor_to_dense(features['label'], default_value='*')
 
-    if norm_type:
-        in_dtype = tf.float32
-    else:
-        in_dtype = tf.uint8
-
-    input_list = tf.decode_raw(dense_input, in_dtype)
+    # We should verify if input is normalized or not before deciding to parse it as a float or uint.
+    input_list = tf.decode_raw(dense_input, tf.uint8)
     label_list = tf.decode_raw(dense_label, tf.float32)
 
-    #Height and width are dynamically calculated.
-    #Therefore, tf.reshape() will cause shape to be undefined and throw an
-    #error when running inference for model.
+    # Height and width are dynamically calculated.
+    # Therefore, tf.reshape() will cause shape to be undefined and throw an
+    # error when running inference for model.
     input_shape = tf.stack([num_frames, height, width, 3])
     label_shape = tf.stack([num_frames, height, width, 1])
 
