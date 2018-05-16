@@ -406,7 +406,6 @@ if __name__ == "__main__":
     train_result_file = config.train["train_result_file"][m]
     status_file = config.train["status_file"][m]
 
-<<<<<<< HEAD
     print("Options selected:\n"
           " machine = {}\n"
           " gpu = {}\n"
@@ -415,25 +414,6 @@ if __name__ == "__main__":
           " colorspace = {}\n"
           " norm_type = {}\n"
           " norm_dim = {}\n".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
-||||||| merged common ancestors
-    print("Options selected:"
-          " machine = {}"
-          " gpu = {}"
-          " train_dir = {}"
-          " val_filename = {}"
-          " colorspace = {}"
-          " norm_type = {}"
-          " norm_dim = {}".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
-=======
-    print("Options selected:"
-          " machine = {}\n"
-          " gpu = {}\n"
-          " train_dir = {}\n"
-          " val_filename = {}\n"
-          " colorspace = {}\n"
-          " norm_type = {}\n"
-          " norm_dim = {}\n".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
->>>>>>> e5eed345f208772f3ce70ebabb220d0a76bd19a3
                                   options.color_space, options.norm_type, options.norm_dim))
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=options.gpu)

@@ -204,12 +204,6 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         continue
       elif frame.any():
         # Change image colorspace (n_channels is 3 for input and 1 for label)
-<<<<<<< HEAD
-||||||| merged common ancestors
-        frame = frame.astype(np.float32)
-=======
-        # frame = frame.astype(np.float32)
->>>>>>> e5eed345f208772f3ce70ebabb220d0a76bd19a3
         if input:
           if colorspace:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
