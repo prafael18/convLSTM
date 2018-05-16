@@ -1,5 +1,3 @@
-# import os
-# os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 from tensorflow.python.platform import gfile
 import numpy as np
@@ -8,12 +6,11 @@ import datetime
 import optparse
 import os
 
-import input
 import model
 import config
 import infer
 
-i = config.train["machine_index"]
+#i = config.train["machine_index"]
 train_tfrecords_filename = None
 val_tfrecords_filename = None
 save_model_dir = None
@@ -167,6 +164,53 @@ def get_placeholders(load_model, names=None):
                                  name=names[1])
         return input_x, label_y
 
+def parse_function(serialized_example):
+    """Processes an example ProtoBuf and returns input and label with shape:
+        [batch_size, n_frames, height, width, channels]
+    """
+    #Parse into tensors
+    features = tf.parse_single_example(
+        serialized_example,
+        features = {
+            'height': tf.FixedLenFeature([], tf.int64),
+            'width': tf.FixedLenFeature([], tf.int64),
+            'num_frames': tf.FixedLenFeature([], tf.int64),
+            'input': tf.VarLenFeature(tf.string),
+            'label': tf.VarLenFeature(tf.string)
+        }
+    )
+
+    height = tf.cast(features['height'], tf.int32)
+    width = tf.cast(features['width'], tf.int32)
+    num_frames = tf.cast(features['num_frames'], tf.int32)
+
+    dense_input = tf.sparse_tensor_to_dense(features['input'], default_value='*')
+    dense_label = tf.sparse_tensor_to_dense(features['label'], default_value='*')
+
+    if norm_type:
+        in_dtype = tf.float32
+    else:
+        in_dtype = tf.uint8
+
+    input_list = tf.decode_raw(dense_input, in_dtype)
+    label_list = tf.decode_raw(dense_label, tf.float32)
+
+    #Height and width are dynamically calculated.
+    #Therefore, tf.reshape() will cause shape to be undefined and throw an
+    #error when running inference for model.
+    input_shape = tf.stack([num_frames, height, width, 3])
+    label_shape = tf.stack([num_frames, height, width, 1])
+
+    inputs = tf.reshape(input_list, input_shape)
+    labels = tf.reshape(label_list, label_shape)
+
+    inputs = tf.cast(inputs, tf.float32)
+    labels = tf.cast(labels, tf.float32)
+
+    # label_max = tf.reduce_max(label)
+
+    return inputs, labels
+
 
 def get_data(load_model, filenames, batch_size, names=None):
 
@@ -183,7 +227,7 @@ def get_data(load_model, filenames, batch_size, names=None):
 
         # train_dataset = tf.data.TFRecordDataset(filenames)
         # train_dataset = train_dataset.shuffle(buffer_size=40)
-        train_dataset = train_dataset.map(input.parse_function)
+        train_dataset = train_dataset.map(parse_function)
         train_dataset = train_dataset.batch(batch_size=batch_size)
 
         # Runs through tfrecord once. Must call initializer for every epoch
@@ -362,6 +406,7 @@ if __name__ == "__main__":
     train_result_file = config.train["train_result_file"][m]
     status_file = config.train["status_file"][m]
 
+<<<<<<< HEAD
     print("Options selected:\n"
           " machine = {}\n"
           " gpu = {}\n"
@@ -370,9 +415,29 @@ if __name__ == "__main__":
           " colorspace = {}\n"
           " norm_type = {}\n"
           " norm_dim = {}\n".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
+||||||| merged common ancestors
+    print("Options selected:"
+          " machine = {}"
+          " gpu = {}"
+          " train_dir = {}"
+          " val_filename = {}"
+          " colorspace = {}"
+          " norm_type = {}"
+          " norm_dim = {}".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
+=======
+    print("Options selected:"
+          " machine = {}\n"
+          " gpu = {}\n"
+          " train_dir = {}\n"
+          " val_filename = {}\n"
+          " colorspace = {}\n"
+          " norm_type = {}\n"
+          " norm_dim = {}\n".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
+>>>>>>> e5eed345f208772f3ce70ebabb220d0a76bd19a3
                                   options.color_space, options.norm_type, options.norm_dim))
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=options.gpu)
 
     with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+    #with tf.Session() as sess:
         train(norm_type)
