@@ -1,4 +1,4 @@
-#!/usr/bin/python3.5
+#!/usr/bin/python3
 
 """Easily convert RGB video data (e.g. .avi) to the TensorFlow tfrecords file format with the provided 3 color channels.
  Allows to subsequently train a neural network in TensorFlow with the generated tfrecords.
@@ -222,10 +222,10 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
 
         if input and norm_dim == FRAME_NORM:
           image = normalize(image, norm_type)
-        if not input:
-          image = image.reshape(image.shape[0], image.shape[1], 1)
-          image = normalize(image, FT_SCALE)
-          image = image.reshape(image.shape[:-1])
+        #if not input:
+          #image = image.reshape(image.shape[0], image.shape[1], 1)
+          # image = normalize(image, FT_SCALE)
+          #image = image.reshape(image.shape[:-1])
 
         if not clip.any():
           clip = image.reshape(1, height, width, n_channels)
@@ -418,6 +418,7 @@ if __name__ == "__main__":
     exit(1)
 
   print("norm_type is {}".format(options.norm_type))
+  print("norm_dim is {} ".format(options.norm_dim))
 
   if not options.norm_type:
     tfrecord_name = "{}_{}_{}".format(options.dataset, options.norm_dim, options.color_space)
@@ -438,6 +439,10 @@ if __name__ == "__main__":
     destination = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/tfr"
     input_source_dir = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/input"
     label_source_dir = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/label"
+  elif options.machine == 3:
+    destination = "/home/rafael/Documents/ic/src/data/" + options.dataset + "/tfr"
+    input_source_dir = "/home/rafael/Documents/ic/src/data/" + options.dataset + "/inputs"
+    label_source_dir = "/home/rafael/Documents/ic/src/data/" + options.dataset + "/labels"
   else:
     exit(1)
 
@@ -453,7 +458,7 @@ if __name__ == "__main__":
   input_channels = 3
   label_channels = 1
   max_frames_per_video = 15
-  label_dtype = "float32"
+  label_dtype = "uint8"
   file_suffix = "*.avi"
 
   print("""Options selected:

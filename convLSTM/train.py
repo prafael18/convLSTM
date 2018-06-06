@@ -192,7 +192,7 @@ def parse_function(serialized_example):
         in_dtype = tf.uint8
 
     input_list = tf.decode_raw(dense_input, in_dtype)
-    label_list = tf.decode_raw(dense_label, tf.float32)
+    label_list = tf.decode_raw(dense_label, tf.uint8)
 
     #Height and width are dynamically calculated.
     #Therefore, tf.reshape() will cause shape to be undefined and throw an
@@ -337,13 +337,13 @@ def train(norm_type):
             if val_loss < BEST_LOSS:
                 BEST_LOSS = val_loss
                 worse_epochs = 0
-                model.save(sess, save_model_dir, overwrite=True,
+                model.save(sess, os.path.join(save_model_dir, "best"), overwrite=True,
                            tags=[tf.saved_model.tag_constants.TRAINING])
                 with open(val_result_file.split('.')[0] + "_best.txt", "w") as f:
                     f.write("Best results on validation set:\n")
                     f.write("Epoch {}: LOSS = {:.4f}\n".format(epoch, val_loss))
             else:
-                model.save(sess, save_model_dir, overwrite=True,
+                model.save(sess, os.path.join(save_model_dir, "latest"), overwrite=True,
                            tags=[tf.saved_model.tag_constants.TRAINING])
                 worse_epochs += 1
                 if worse_epochs >= 10:

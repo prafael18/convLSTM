@@ -1,4 +1,4 @@
-#!/usr/bin/python3.5
+#!/usr/bin/python3
 import tensorflow as tf
 import optparse
 import numpy as np
@@ -119,7 +119,7 @@ def parse_function(serialized_example):
         in_dtype = tf.uint8
 
     input_list = tf.decode_raw(dense_input, in_dtype)
-    label_list = tf.decode_raw(dense_label, tf.float32)
+    label_list = tf.decode_raw(dense_label, tf.uint8)
 
     # Height and width are dynamically calculated.
     # Therefore, tf.reshape() will cause shape to be undefined and throw an
@@ -200,7 +200,7 @@ def eval(tf_filename, load_model_dir, name, mode, batch_size):
         logits = g.get_tensor_by_name("logits:0")
         # activations = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=label_tensor)
         activations = tf.nn.relu(logits, name="pred_activations")
-        activations = tf.losses.mean_squared_error(label_tensor, activations)
+        # activations = tf.losses.mean_squared_error(label_tensor, activations)
 
         loss = g.get_tensor_by_name("loss:0")
 
@@ -212,7 +212,10 @@ def eval(tf_filename, load_model_dir, name, mode, batch_size):
 
         pred, mean_loss = sess.run([activations, loss], feed_dict=feed_dict)
 
-        # print(pred.shape)
+        print(pred.shape)
+        print(input_x.shape)
+        print(label_y.shape)
+
 
         # Set upper video
         if mode == INPUT_LABEL or mode == INPUT_PRED:
@@ -233,8 +236,8 @@ def eval(tf_filename, load_model_dir, name, mode, batch_size):
 
 
 if __name__ == "__main__":
-    base_model_dir = "/home/rafael/Documents/unicamp/ic/src/results/exp"
-    base_tfrecord_dir = "/home/rafael/Documents/unicamp/ic/src/data/test/tfr/*"
+    base_model_dir = "/home/rafael/Documents/ic/src/results/exp"
+    base_tfrecord_dir = "/home/rafael/Documents/ic/src/data/test/tfr/*"
     batch_size = 5
 
     # Parse options

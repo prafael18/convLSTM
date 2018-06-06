@@ -123,7 +123,7 @@ def eval(tf_filename, load_model_dir, batch_size):
         # Get test dataset to make predictions on.
         test_dataset = tf.data.TFRecordDataset(tf_filename)
         test_dataset = test_dataset.map(parse_function)
-        test_dataset = test_dataset.repeat(1)
+        # test_dataset = test_dataset.repeat(1)
         test_dataset = test_dataset.batch(batch_size=batch_size)
 
         # Runs through tfrecord once. Must call initializer for every epoch
@@ -205,8 +205,8 @@ def eval(tf_filename, load_model_dir, batch_size):
 
 
 if __name__ == '__main__':
-    base_model_dir = "/home/rafael/Documents/unicamp/ic/src/results/exp"
-    base_tfrecord_dir = "/home/rafael/Documents/unicamp/ic/src/data/test/tfr/*"
+    base_model_dir = "/home/rafael/Documents/ic/src/results/exp"
+    base_tfrecord_dir = "/home/rafael/Documents/ic/src/data/test/tfr/*"
     batch_size = 5
 
     # Parse options

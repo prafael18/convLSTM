@@ -8,8 +8,11 @@ import os
 # tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/data/scp/tfr/*'
 # save_path = '/home/rafael/Documents/unicamp/ic/src/data/scp/videos'
 
-tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/*'
-save_path = '/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test'
+# tfrecord_path = '/home/rafael/Documents/ic/src/convLSTM/proc/test/*'
+# save_path = '/home/rafael/Documents/ic/src/convLSTM/proc/test'
+
+tfrecord_path = '/home/rafael/Documents/ic/src/data/test/tfr/test_raw_rgb.tfrecords'
+save_path = '/home/rafael/Documents/ic/src/'
 
 height = None
 width = None
@@ -98,16 +101,19 @@ def readTFRecord(filepaths):
         input_video = np.reshape(input_string_list, (frames, height, width, -1))
 
         label_byte_list = example.features.feature['label'].bytes_list.value
-        label_string_list = [np.fromstring(label_string, dtype=np.float32) for label_string in label_byte_list]
+        label_string_list = [np.fromstring(label_string, dtype=np.uint8) for label_string in label_byte_list]
         label_video = np.reshape(label_string_list, (frames, height, width, -1))
 
-        # if i == 0:
-        pixel_intensity(input_video)
-        stats(input_video)
+        if i == 0:
+            pixel_intensity(input_video)
+            stats(input_video)
+            pixel_intensity(label_video)
+            stats(label_video)
 
         if "ss" in filename:
           input_video = (input_video - np.min(input_video))/(np.max(input_video) - np.min(input_video))
 
+        print(input_video.shape)
         plt.imshow(input_video[5])
         plt.show()
         print("Video shape = ", input_video.shape)
