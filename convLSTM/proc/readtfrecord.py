@@ -8,7 +8,7 @@ import os
 # tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/data/scp/tfr/*'
 # save_path = '/home/rafael/Documents/unicamp/ic/src/data/scp/videos'
 
-tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/tfr/*'
+tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/*'
 save_path = '/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test'
 
 height = None

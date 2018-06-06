@@ -39,7 +39,9 @@ def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values, va
     mse_list = []
     loss_list = []
 
-    activations = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=feed_keys[1])
+    # activations = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=feed_keys[1])
+    # activations = tf.nn.sigmoid(logits)
+    activations = tf.nn.relu(logits)
 
     while True:
         try:

@@ -1,15 +1,28 @@
+#!/usr/bin/python3.5
 import tensorflow as tf
 import optparse
-import os
-import model
 import numpy as np
-import matplotlib.pyplot as plt
-
+import cv2
 from tensorflow.python.platform import gfile
 import warnings
+import os
+import sys
+import inspect
 
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
+sys.path.insert(0, parentdir)
+
+import model
+
+
+INPUT_LABEL = 1
+INPUT_PRED = 2
+PRED_LABEL = 3
 FLOAT32 = 1
+
 dtype = None
+verbose = False
 
 
 def sim(list, pred, label):
@@ -123,22 +136,58 @@ def parse_function(serialized_example):
     return inputs, labels
 
 
-def eval(tf_filename, load_model_dir, batch_size):
+def save_video(name, save_dir, upper_vid, upper_vid_conv, lower_vid, lower_vid_conv):
+    # Input videos are batches of 5 clips.
+    # Videos are 5-d tensors of shape (batch_size, frames, height, width, channels)
+
+    # Get input properties
+    clips = upper_vid.shape[0]
+    frames = upper_vid.shape[1]
+    height = upper_vid.shape[2]
+    width = upper_vid.shape[3]
+
+    # Create filename
+    save_file = os.path.join(save_dir, name+".avi")
+    if verbose:
+        print("Saving video to file: {}".format(save_file))
+
+    # Get VideoWriter object. We multiply by 2x the height because the clips are concatenated vertically
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = cv2.VideoWriter(save_file, fourcc, 5, (width, 2*height))
+
+    for v in range(clips):
+        for f in range(frames):
+            upper_frame = map(upper_vid[v][f], 0, 255)
+            lower_frame = map(lower_vid[v][f], 0, 255)
+            upper_frame = cv2.cvtColor(upper_frame, upper_vid_conv)
+            lower_frame = cv2.cvtColor(lower_frame, lower_vid_conv)
+            frame = np.concatenate((upper_frame, lower_frame), axis=0)
+            out.write(frame)
+    out.release()
+
+
+def map(input_video, output_start, output_end):
+    slope = (output_end - output_start) / (np.max(input_video)-np.min(input_video))
+    output = output_start + slope * (input_video - np.min(input_video))
+    return np.uint8(output)
+
+
+def eval(tf_filename, load_model_dir, name, mode, batch_size):
 
     with tf.Session() as sess:
-        train_dataset = tf.data.TFRecordDataset(tf_filename)
-        # train_dataset = train_dataset.shuffle(buffer_size=40)
 
-        train_dataset = train_dataset.map(parse_function)
-        train_dataset = train_dataset.repeat(1)
-        train_dataset = train_dataset.batch(batch_size=batch_size)
+        # Get test dataset to make predictions on.
+        test_dataset = tf.data.TFRecordDataset(tf_filename)
+        test_dataset = test_dataset.map(parse_function)
+        test_dataset = test_dataset.repeat(1)
+        test_dataset = test_dataset.batch(batch_size=batch_size)
 
         # Runs through tfrecord once. Must call initializer for every epoch
-        iterator = train_dataset.make_one_shot_iterator()
+        iterator = test_dataset.make_one_shot_iterator()
 
         input_batch, label_batch = iterator.get_next()
 
-        #Loads SavedModel, initalizing graph and variables
+        # Loads SavedModel, initalizing graph and variables
         model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])
 
         g = tf.get_default_graph()
@@ -149,80 +198,38 @@ def eval(tf_filename, load_model_dir, batch_size):
 
         # Retrieve prediction tensors
         logits = g.get_tensor_by_name("logits:0")
-        cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=label_tensor)
-        activations = tf.nn.sigmoid(logits, name="pred_activations")
+        # activations = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=label_tensor)
+        activations = tf.nn.relu(logits, name="pred_activations")
+        activations = tf.losses.mean_squared_error(label_tensor, activations)
+
         loss = g.get_tensor_by_name("loss:0")
 
-        # Retrieve epoch counter
-        epoch_counter = [v for v in tf.global_variables() if v.name == "epoch_counter:0"][0]
-        print("Current epoch is {}".format(epoch_counter.eval()))
+        input_x, label_y = sess.run([input_batch, label_batch])
+        feed_dict = {
+            input_tensor: input_x,
+            label_tensor: label_y
+        }
 
-        sim_list = []
-        cc_list = []
-        mse_list = []
-        loss_list = []
+        pred, mean_loss = sess.run([activations, loss], feed_dict=feed_dict)
 
-        while True:
-            try:
-                input_x, label_y = sess.run([input_batch, label_batch])
-                feed_dict = {
-                    input_tensor: input_x,
-                    label_tensor: label_y
-                }
+        # print(pred.shape)
 
-                pred, mean_loss, logits_out, cross_entropy_out = sess.run([activations, loss, logits, cross_entropy], feed_dict=feed_dict)
+        # Set upper video
+        if mode == INPUT_LABEL or mode == INPUT_PRED:
+            upper_vid = input_x
+            upper_vid_conv = cv2.COLOR_RGB2BGR
+        else:
+            upper_vid = pred
+            upper_vid_conv = cv2.COLOR_GRAY2BGR
 
-                # print(pred.shape)
-                # print(pred[0].shape)
-                # pred = np.reshape(pred[0], pred[0].shape[:3])
-                # label = np.reshape(label_y, label_y.shape[1:4])
-                pred = cross_entropy_out
+        # Set lower video
+        lower_vid_conv = cv2.COLOR_GRAY2BGR
+        if mode == INPUT_LABEL or mode == PRED_LABEL:
+            lower_vid = label_y
+        else:
+            lower_vid = pred
 
-                print(pred.shape)
-                print(label_y.shape)
-
-                loss_list.append(mean_loss)
-                sim(sim_list, pred.copy(), label_y.copy())
-                cc(cc_list, pred.copy(), label_y.copy())
-                mse(mse_list, pred.copy(), label_y.copy())
-
-            except tf.errors.OutOfRangeError:
-                print("Finished testing predictions")
-
-                sim_value = np.mean(np.array(sim_list))
-                cc_value = np.mean(np.array(cc_list))
-                mse_value = np.mean(np.array(mse_list))
-                loss_value = np.mean(np.array(loss_list))
-
-                # if epoch:
-                #     print("Epoch {}'s loss in validation set: {}".format(epoch, loss_value))
-                print("SIM = {}\nCC = {}\nMSE = {}\n".format(sim_value, cc_value, mse_value))
-
-                return sim_value, cc_value, mse_value
-
-        # input_frame = np.reshape(input_x[0][3][:, :, :], input_x.shape[2:5])
-        # label_frame = np.reshape(label_y[0][3][:, :, :], label_y.shape[2:4])
-        # pred_frame = np.reshape(pred[0][3][:, :, :], pred.shape[2:4])
-        # ce_frame = np.reshape(cross_entropy_out[0][3][:, :, :], cross_entropy_out.shape[2:4])
-        #
-        # print(np.sum(np.abs(ce_frame-label_frame)))
-        # print(np.sum(np.abs(pred_frame-label_frame)))
-        #
-        # plt.subplot(211)
-        # plt.imshow(input_frame)
-        # plt.subplot(212)
-        # plt.imshow(label_frame)
-        # plt.show()
-        #
-        # print(label_frame.shape)
-        #
-        # diff = np.sum(np.abs(cross_entropy_out-pred))
-        # print(diff)
-        # print(label_y.shape)
-        # print(input_x.shape)
-        # print(cross_entropy_out.shape)
-        # print(cross_entropy_out)
-        # print(pred)
+        save_video(name, load_model_dir, upper_vid, upper_vid_conv, lower_vid, lower_vid_conv)
 
 
 if __name__ == "__main__":
@@ -235,16 +242,32 @@ if __name__ == "__main__":
     parser.add_option("-m", "--mode",
                       action="store", type="string", dest="mode",
                       help="Consider i = input, l = label and p = predictions. Choose to generate "
-                           "videos in any of the modes il, ip, lp.",
-                      default="il")
+                           "videos in any of the modes il, ip, pl.",
+                      default="pl")
     parser.add_option("-e", "--experiment",
                       action="store", type="int", dest="experiment",
                       help="Experiment number which we wish to make predictions for.",
-                      default=14)
+                      default=22)
+    parser.add_option("-f", "--filename",
+                      action="store", type="string", dest="filename",
+                      help="Filename to name video after. Directory is by default the experiment's directory.",
+                      default="pred_label")
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose",
+                      help="Print helpful data.", default=True)
     options, args = parser.parse_args()
 
+    # Get cmdline args
+    verbose = options.verbose
     mode = options.mode
     exp = options.experiment
+    filename = options.filename
+
+    # Set op mode
+    if mode == "il": mode = INPUT_LABEL
+    elif mode == "ip": mode = INPUT_PRED
+    elif mode == "pl": mode = PRED_LABEL
+    else: exit(1)
 
     # Retrieve directory from which to load model
     load_model_dir = os.path.join(base_model_dir, str(exp))
@@ -255,8 +278,12 @@ if __name__ == "__main__":
     filepaths = gfile.Glob(base_tfrecord_dir)
     readme_file = os.path.join(load_model_dir, "README.md")
     with open(readme_file, "r") as f:
-        data = f.readline()
-        keys = data.strip().split("_")
+        name = f.readline().strip()
+        keys = name.split("_")
+
+    # In case a filename is specified, we should use it instead.
+    if filename is not None:
+        name = filename
 
     # Find tfrecord among all tfrecords using README keys
     for fp in filepaths:
@@ -271,6 +298,65 @@ if __name__ == "__main__":
     if "ss" in tf_filename or "fs" in tf_filename:
         dtype = FLOAT32
 
-    print(tf_filename)
+    if verbose:
+        if mode == INPUT_LABEL: mode_str = "input-label"
+        elif mode == INPUT_PRED: mode_str = "input-pred"
+        else: mode_str = "pred-label"
+        print("\nReading data from tfrecord: {}".format(tf_filename))
+        print("Mode selected: {}".format(mode_str))
+        print("Making videos for experiment {} processed as {}\n".format(exp, name))
+
     # Evaluate data and make predictions
-    eval(tf_filename, load_model_dir, batch_size)
+    eval(tf_filename, load_model_dir, name, mode, batch_size)
+
+# print(pred.shape)
+# print(pred[0].shape)
+# pred = np.reshape(pred[0], pred[0].shape[:3])
+# label = np.reshape(label_y, label_y.shape[1:4])
+#     pred = cross_entropy_out
+#
+#     print(pred.shape)
+#     print(label_y.shape)
+#
+#     loss_list.append(mean_loss)
+#     sim(sim_list, pred.copy(), label_y.copy())
+#     cc(cc_list, pred.copy(), label_y.copy())
+#     mse(mse_list, pred.copy(), label_y.copy())
+#
+# except tf.errors.OutOfRangeError:
+#     print("Finished testing predictions")
+#
+#     sim_value = np.mean(np.array(sim_list))
+#     cc_value = np.mean(np.array(cc_list))
+#     mse_value = np.mean(np.array(mse_list))
+#     loss_value = np.mean(np.array(loss_list))
+#
+#     # if epoch:
+#     #     print("Epoch {}'s loss in validation set: {}".format(epoch, loss_value))
+#     print("SIM = {}\nCC = {}\nMSE = {}\n".format(sim_value, cc_value, mse_value))
+#
+#     return sim_value, cc_value, mse_value
+
+# input_frame = np.reshape(input_x[0][3][:, :, :], input_x.shape[2:5])
+# label_frame = np.reshape(label_y[0][3][:, :, :], label_y.shape[2:4])
+# pred_frame = np.reshape(pred[0][3][:, :, :], pred.shape[2:4])
+# ce_frame = np.reshape(cross_entropy_out[0][3][:, :, :], cross_entropy_out.shape[2:4])
+#
+# print(np.sum(np.abs(ce_frame-label_frame)))
+# print(np.sum(np.abs(pred_frame-label_frame)))
+#
+# plt.subplot(211)
+# plt.imshow(input_frame)
+# plt.subplot(212)
+# plt.imshow(label_frame)
+# plt.show()
+#
+# print(label_frame.shape)
+#
+# diff = np.sum(np.abs(cross_entropy_out-pred))
+# print(diff)
+# print(label_y.shape)
+# print(input_x.shape)
+# print(cross_entropy_out.shape)
+# print(cross_entropy_out)
+# print(pred)
