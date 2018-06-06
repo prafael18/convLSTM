@@ -26,7 +26,6 @@ verbose = False
 
 
 def sim(list, pred, label):
-    warnings.simplefilter("error", RuntimeWarning)
     # Pre-process data:
     # (1) Normalize pred and label between 0 and 1
     # (2) Make sure that all pixel values add up to 1
@@ -39,15 +38,12 @@ def sim(list, pred, label):
 
     for v in range(num_videos):
         for f in range(num_frames):
-            try:
-                pred[v][f] = (pred[v][f] - np.min(pred[v][f]))/(np.max(pred[v][f])-np.min(pred[v][f]))
-                pred[v][f] = pred[v][f]/np.sum(pred[v][f])
-                label[v][f] = label[v][f]/np.sum(label[v][f])
-                sim_coeff = np.minimum(pred[v], label[v])
-                sim_list = [np.sum(s) for s in sim_coeff]
-            except RuntimeWarning:
-                pass
-        list.append(np.mean(np.array(sim_list)))
+            pred[v][f] = (pred[v][f] - np.min(pred[v][f]))/(np.max(pred[v][f])-np.min(pred[v][f]))
+            pred[v][f] = pred[v][f]/np.sum(pred[v][f])
+            label[v][f] = label[v][f]/np.sum(label[v][f])
+            sim_coeff = np.minimum(pred[v][f], label[v][f])
+            sim_list.append(np.sum(sim_coeff))
+    list.append(np.mean(np.array(sim_list)))
     return
 
 
@@ -61,19 +57,15 @@ def cc(cc_list, pred, label):
     corr_coeff = []
     for v in range(num_videos):
         for f in range(num_frames):
-            try:
-                # Normalize data to have mean 0 and variance 1
-                pred[v][f] = (pred[v][f] - np.mean(pred[v][f])) / np.std(pred[v][f])
-                label[v][f] = (label[v][f] - np.mean(label[v][f])) / np.std(label[v][f])
+            # Normalize data to have mean 0 and variance 1
+            pred[v][f] = (pred[v][f] - np.mean(pred[v][f])) / np.std(pred[v][f])
+            label[v][f] = (label[v][f] - np.mean(label[v][f])) / np.std(label[v][f])
 
-                # Calculate correlation coefficient for every frame
-                pd = pred[v][f] - np.mean(pred[v][f])
-                ld = label[v][f] - np.mean(label[v][f])
-                corr_coeff.append((pd * ld).sum() / np.sqrt((pd * pd).sum() * (ld * ld).sum()))
-            except RuntimeWarning:
-                pass
-            # print("Failed to append frame {} to corr_coeff".format(i))
-        cc_list.append(np.mean(np.array(corr_coeff)))
+            # Calculate correlation coefficient for every frame
+            pd = pred[v][f] - np.mean(pred[v][f])
+            ld = label[v][f] - np.mean(label[v][f])
+            corr_coeff.append((pd * ld).sum() / np.sqrt((pd * pd).sum() * (ld * ld).sum()))
+    cc_list.append(np.mean(np.array(corr_coeff)))
     return
 
 
@@ -192,48 +184,66 @@ def eval(tf_filename, load_model_dir, name, mode, batch_size):
 
         g = tf.get_default_graph()
 
+        # Get epoch tensor
+        epoch_tensor = [v for v in tf.global_variables() if v.name == "epoch_counter:0"][0]
+
         # Tensors that will be fed when running op.
         input_tensor = g.get_tensor_by_name("input_x:0")
         label_tensor = g.get_tensor_by_name("label_y:0")
 
         # Retrieve prediction tensors
         logits = g.get_tensor_by_name("logits:0")
-        # activations = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits, labels=label_tensor)
         activations = tf.nn.relu(logits, name="pred_activations")
-        # activations = tf.losses.mean_squared_error(label_tensor, activations)
 
+        # Retrieve loss tensor
         loss = g.get_tensor_by_name("loss:0")
 
-        input_x, label_y = sess.run([input_batch, label_batch])
-        feed_dict = {
-            input_tensor: input_x,
-            label_tensor: label_y
-        }
+        batch_num = 0
+        cc_list = []
+        sim_list = []
+        mse_list = []
 
-        pred, mean_loss = sess.run([activations, loss], feed_dict=feed_dict)
+        while True:
+            try:
+                input_x, label_y = sess.run([input_batch, label_batch])
+                feed_dict = {
+                    input_tensor: input_x,
+                    label_tensor: label_y
+                }
 
-        print(pred.shape)
-        print(input_x.shape)
-        print(label_y.shape)
+                pred, mean_loss = sess.run([activations, loss], feed_dict=feed_dict)
 
+                cc(cc_list, pred.copy(), label_y.copy())
+                sim(sim_list, pred.copy(), label_y.copy())
+                mse(mse_list, pred.copy(), label_y.copy())
 
-        # Set upper video
-        if mode == INPUT_LABEL or mode == INPUT_PRED:
-            upper_vid = input_x
-            upper_vid_conv = cv2.COLOR_RGB2BGR
-        else:
-            upper_vid = pred
-            upper_vid_conv = cv2.COLOR_GRAY2BGR
+                batch_num += 1
 
-        # Set lower video
-        lower_vid_conv = cv2.COLOR_GRAY2BGR
-        if mode == INPUT_LABEL or mode == PRED_LABEL:
-            lower_vid = label_y
-        else:
-            lower_vid = pred
+                if batch_num == 20:
+                    # Set upper video
+                    if mode == INPUT_LABEL or mode == INPUT_PRED:
+                        upper_vid = input_x
+                        upper_vid_conv = cv2.COLOR_RGB2BGR
+                    else:
+                        upper_vid = pred
+                        upper_vid_conv = cv2.COLOR_GRAY2BGR
 
-        save_video(name, load_model_dir, upper_vid, upper_vid_conv, lower_vid, lower_vid_conv)
+                    # Set lower video
+                    lower_vid_conv = cv2.COLOR_GRAY2BGR
+                    if mode == INPUT_LABEL or mode == PRED_LABEL:
+                        lower_vid = label_y
+                    else:
+                        lower_vid = pred
 
+                    save_video(name, load_model_dir, upper_vid, upper_vid_conv, lower_vid, lower_vid_conv)
+
+            except tf.errors.OutOfRangeError:
+                epoch = epoch_tensor.eval()
+                print("Epoch {}".format(epoch))
+                print("CC = {:.4f}".format(np.mean(cc_list)))
+                print("SIM = {:.4f}".format(np.mean(sim_list)))
+                print("MSE = {:.4f}".format(np.mean(mse_list)))
+                return
 
 if __name__ == "__main__":
     base_model_dir = "/home/rafael/Documents/ic/src/results/exp"

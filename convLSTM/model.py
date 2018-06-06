@@ -7,7 +7,7 @@ import os
 
 # input has shape [batch_size, time_steps, img_size_x, img_size_y, channels]
 
-LEARNING_RATE = 0.001
+LEARNING_RATE = 1e-4
 
 def save(sess, save_dir, overwrite=False, **builder_kwargs):
     """
@@ -164,7 +164,6 @@ def loss(logits, labels, name=None):
     # cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits,
     #         labels=labels,
     #         name="cross_entropy_batch")
-    # print("Cross entropy = ", cross_entropy)
     # cross_entropy_mean = tf.reduce_mean(cross_entropy, name=name)
     # tf.summary.scalar("cross_entropy", cross_entropy_mean)
     pred = tf.nn.relu(logits, name="predictions")

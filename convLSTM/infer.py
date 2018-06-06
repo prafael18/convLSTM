@@ -59,31 +59,31 @@ def parse_function(serialized_example):
     return inputs, labels
 
 
-def sim(sim_list, pred, label):
-    # warnings.simplefilter("error", RuntimeWarning)
-
+def sim(list, pred, label):
     # Pre-process data:
     # (1) Normalize pred and label between 0 and 1
     # (2) Make sure that all pixel values add up to 1
+    # print("Sum pred = ", np.sum(pred))
 
     num_videos = pred.shape[0]
     num_frames = pred.shape[1]
-    frame_sim_list = []
+
+    sim_list = []
 
     for v in range(num_videos):
         for f in range(num_frames):
             pred[v][f] = (pred[v][f] - np.min(pred[v][f]))/(np.max(pred[v][f])-np.min(pred[v][f]))
             pred[v][f] = pred[v][f]/np.sum(pred[v][f])
             label[v][f] = label[v][f]/np.sum(label[v][f])
-            min_val = np.minimum(pred[v][f], label[v][f])
-            sim_coeff = np.sum(min_val)
-            frame_sim_list.append(sim_coeff)
-        sim_list.append(np.mean(np.array(frame_sim_list)))
+            sim_coeff = np.minimum(pred[v][f], label[v][f])
+            sim_list.append(np.sum(sim_coeff))
+    list.append(np.mean(np.array(sim_list)))
+    return
 
 
 def cc(cc_list, pred, label):
     # Pred and label have shapes (batch_size, frames, height, width, channels)
-    # warnings.simplefilter("error", RuntimeWarning)
+    warnings.simplefilter("error", RuntimeWarning)
 
     num_videos = pred.shape[0]
     num_frames = pred.shape[1]
@@ -99,7 +99,7 @@ def cc(cc_list, pred, label):
             pd = pred[v][f] - np.mean(pred[v][f])
             ld = label[v][f] - np.mean(label[v][f])
             corr_coeff.append((pd * ld).sum() / np.sqrt((pd * pd).sum() * (ld * ld).sum()))
-        cc_list.append(np.mean(np.array(corr_coeff)))
+    cc_list.append(np.mean(np.array(corr_coeff)))
     return
 
 
