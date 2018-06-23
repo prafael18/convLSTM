@@ -11,7 +11,8 @@ import os
 # tfrecord_path = '/home/rafael/Documents/ic/src/convLSTM/proc/test/*'
 # save_path = '/home/rafael/Documents/ic/src/convLSTM/proc/test'
 
-tfrecord_path = '/home/rafael/Documents/ic/src/data/test/tfr/test_raw_rgb.tfrecords'
+# tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/raw_rgb_lfs/*.tfrecords'
+tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/rgb_raw/*.tfrecords'
 save_path = '/home/rafael/Documents/ic/src/'
 
 height = None
@@ -105,16 +106,17 @@ def readTFRecord(filepaths):
         label_video = np.reshape(label_string_list, (frames, height, width, -1))
 
         if i == 0:
-            pixel_intensity(input_video)
-            stats(input_video)
+            # pixel_intensity(input_video)
+            # stats(input_video)
             pixel_intensity(label_video)
             stats(label_video)
 
         if "ss" in filename:
           input_video = (input_video - np.min(input_video))/(np.max(input_video) - np.min(input_video))
 
-        print(input_video.shape)
-        plt.imshow(input_video[5])
+        label_video = np.reshape(label_video, label_video.shape[:-1])
+        print(label_video.shape)
+        plt.imshow(label_video[5])
         plt.show()
         print("Video shape = ", input_video.shape)
 
@@ -129,15 +131,5 @@ def readTFRecord(filepaths):
 
 if __name__ == "__main__":
   filenames = gfile.Glob(tfrecord_path)
-  print(filenames)
+  # print(filenames)
   readTFRecord(filenames)
-
-# for j in range(input_video.shape[0]):
-#     if np.sum(input_video[j]) == 0:
-#         print("Found frame {} input clip {} that is black".format(j, i))
-# for j in range(label_video.shape[0]):
-#     if np.sum(label_video[j]) == 0:
-#         print("Found frame {} in label clip {} that is black".format(j, i))
-#         print(np.sum(label_video[j]))
-#         plt.imshow(input_video[j].reshape((135, 240, 3)))
-#         plt.show()

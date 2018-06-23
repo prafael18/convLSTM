@@ -16,6 +16,7 @@ import numpy as np
 import tensorflow as tf
 import optparse
 import os
+import matplotlib.pyplot as plt
 
 STD_SCORE = 1
 FT_SCALE = 0
@@ -145,7 +146,7 @@ def plot_frame(prev_image, new_image, title):
 
 
 def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max_frames_per_clip, input, norm_dim, norm_type,
-                           colorspace, clip_list=None):
+                           colorspace, label_dtype, clip_list=None):
   """Generates an ndarray from multiple video files given by filenames.
   Implementation chooses frame step size automatically for a equal separation distribution of the video images.
 
@@ -209,9 +210,9 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
           else:
             image = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-            # if total_frames_count == 1:
-              # plot_frame(prev_image=cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), new_image=image, title="RGB2LAB")
         else:
+          if label_dtype == "float32":
+              frame = normalize(frame, FT_SCALE)
           image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         image = cv2.resize(image, None, fx=0.125, fy=0.125, interpolation=cv2.INTER_CUBIC)
@@ -298,8 +299,18 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
   :param max_frames_per_video: max_frames per video
   """
 
-  input_filenames = gfile.Glob(os.path.join(input_path, file_suffix))
-  label_filenames = gfile.Glob(os.path.join(label_path, file_suffix))
+  input_filenames = []
+  for ip in input_path:
+      for fn in gfile.Glob(os.path.join(ip, file_suffix)):
+          input_filenames.append(fn)
+
+  label_filenames = []
+  for lp in label_path:
+      for fn in gfile.Glob(os.path.join(lp, file_suffix)):
+          label_filenames.append(fn)
+
+  print(input_filenames)
+  print(label_filenames)
 
 
   if not input_filenames or not label_filenames:
@@ -327,12 +338,12 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
     #which is used to ensure the number of frames processed in the label videos is the same as the input videos.
     label_data, clip_list = convert_video_to_numpy(record_num=i, filenames=label_filenames_split[i],
                                                     width=width, height=height, n_channels=label_channels, max_frames_per_clip=max_frames_per_video,
-                                                    input=False, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace)
+                                                    input=False, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, label_dtype=label_dtype)
 
     #When input=True, an empty frame_list is returned.
     input_data, _ = convert_video_to_numpy(record_num=i, filenames=input_filenames_split[i],
                                            width=width, height=height, n_channels=input_channels, max_frames_per_clip=max_frames_per_video,
-                                           input=True, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, clip_list=clip_list)
+                                           input=True, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, label_dtype=label_dtype, clip_list=clip_list)
 
     for j in range(label_data.shape[0]):
       print("Record {} - Video {}: label clips = {}, input clips = {}".
@@ -367,6 +378,10 @@ if __name__ == "__main__":
                     action="store", type="string", dest="norm_dim",
                     help="Normalization dimension for input data. May choose between clip norm (vnorm), frame norm (fnorm) and raw.",
                     default="raw")
+  parser.add_option("-l", "--label_norm",
+                    action="store", type="string", dest="label_norm",
+                    help="Normalization type for label data. May choose between raw and feature scale (fs).",
+                    default="raw")
   parser.add_option("-f", "--num_files",
                     action="store", type="string", dest="num_files",
                     help="Should tfrecords be saved into a single file or 1 file per clip (many).",
@@ -379,6 +394,13 @@ if __name__ == "__main__":
   options, args = parser.parse_args()
 
 # Dynamically set variables
+
+  if options.label_norm == "raw":
+      label_dtype = "uint8"
+  elif options.label_norm == "fs":
+      label_dtype = "float32"
+  else:
+      exit(1)
 
   if options.norm_type == "ss":
     norm_type = STD_SCORE
@@ -429,20 +451,26 @@ if __name__ == "__main__":
 
   if options.machine == 0:
     destination = "/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/tfr"
-    input_source_dir = "/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/inputs"
-    label_source_dir = "/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/labels"
+    input_source_dir = ["/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/inputs"]
+    label_source_dir = ["/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/labels"]
   elif options.machine == 1:
     destination = "/home/panda/ic/data/" + options.dataset
-    input_source_dir = "/home/panda/raw_data/" + options.dataset + "/inputs"
-    label_source_dir = "/home/panda/raw_data/" + options.dataset + "/labels"
+    input_source_dir = ["/home/panda/raw_data/" + options.dataset + "/inputs"]
+    label_source_dir = ["/home/panda/raw_data/" + options.dataset + "/labels"]
+    if options.dataset == "train":
+        input_source_dir.append("/home/panda/augm_data/inputs")
+        label_source_dir.append("/home/panda/augm_data/labels")
   elif options.machine == 2:
     destination = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/tfr"
-    input_source_dir = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/input"
-    label_source_dir = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/label"
+    input_source_dir = ["/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/input"]
+    label_source_dir = ["/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/label"]
   elif options.machine == 3:
     destination = "/home/rafael/Documents/ic/src/data/" + options.dataset + "/tfr"
-    input_source_dir = "/home/rafael/Documents/ic/src/data/" + options.dataset + "/inputs"
-    label_source_dir = "/home/rafael/Documents/ic/src/data/" + options.dataset + "/labels"
+    input_source_dir = ["/home/rafael/Documents/ic/src/data/" + options.dataset + "/inputs"]
+    label_source_dir = ["/home/rafael/Documents/ic/src/data/" + options.dataset + "/labels"]
+    if options.dataset == "train":
+        input_source_dir.append("/home/rafael/Documents/ic/src/data/augm_out/inputs")
+        label_source_dir.append("/home/rafael/Documents/ic/src/data/augm_out/labels")
   else:
     exit(1)
 
@@ -458,7 +486,7 @@ if __name__ == "__main__":
   input_channels = 3
   label_channels = 1
   max_frames_per_video = 15
-  label_dtype = "uint8"
+  # label_dtype = "float32"
   file_suffix = "*.avi"
 
   print("""Options selected:

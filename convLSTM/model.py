@@ -161,9 +161,8 @@ def inference(inputs, name=None):
 
 
 def loss(logits, labels, name=None):
-    # cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(logits=logits,
-    #         labels=labels,
-    #         name="cross_entropy_batch")
+    # cross_entropy = tf.losses.sigmoid_cross_entropy(logits=logits,
+    #         multi_class_labels=labels)
     # cross_entropy_mean = tf.reduce_mean(cross_entropy, name=name)
     # tf.summary.scalar("cross_entropy", cross_entropy_mean)
     pred = tf.nn.relu(logits, name="predictions")

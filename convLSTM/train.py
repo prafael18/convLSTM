@@ -417,6 +417,6 @@ if __name__ == "__main__":
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=options.gpu)
 
-    with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
-    #with tf.Session() as sess:
+    # with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
+    with tf.Session() as sess:
         train(norm_type)

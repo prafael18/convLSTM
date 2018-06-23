@@ -247,7 +247,7 @@ def eval(tf_filename, load_model_dir, name, mode, batch_size):
 
 if __name__ == "__main__":
     base_model_dir = "/home/rafael/Documents/ic/src/results/exp"
-    base_tfrecord_dir = "/home/rafael/Documents/ic/src/data/test/tfr/*"
+    base_tfrecord_dir = "/home/rafael/Documents/ic/src/data/test/tfr/*.tfrecords"
     batch_size = 5
 
     # Parse options
@@ -299,6 +299,8 @@ if __name__ == "__main__":
         name = filename
 
     # Find tfrecord among all tfrecords using README keys
+    print(keys)
+    print(filepaths)
     for fp in filepaths:
         tf_filename = fp
         for k in keys:
@@ -307,7 +309,7 @@ if __name__ == "__main__":
                 break
         if tf_filename:
             break
-
+    print(tf_filename)
     if "ss" in tf_filename or "fs" in tf_filename:
         dtype = FLOAT32
 
@@ -321,55 +323,3 @@ if __name__ == "__main__":
 
     # Evaluate data and make predictions
     eval(tf_filename, load_model_dir, name, mode, batch_size)
-
-# print(pred.shape)
-# print(pred[0].shape)
-# pred = np.reshape(pred[0], pred[0].shape[:3])
-# label = np.reshape(label_y, label_y.shape[1:4])
-#     pred = cross_entropy_out
-#
-#     print(pred.shape)
-#     print(label_y.shape)
-#
-#     loss_list.append(mean_loss)
-#     sim(sim_list, pred.copy(), label_y.copy())
-#     cc(cc_list, pred.copy(), label_y.copy())
-#     mse(mse_list, pred.copy(), label_y.copy())
-#
-# except tf.errors.OutOfRangeError:
-#     print("Finished testing predictions")
-#
-#     sim_value = np.mean(np.array(sim_list))
-#     cc_value = np.mean(np.array(cc_list))
-#     mse_value = np.mean(np.array(mse_list))
-#     loss_value = np.mean(np.array(loss_list))
-#
-#     # if epoch:
-#     #     print("Epoch {}'s loss in validation set: {}".format(epoch, loss_value))
-#     print("SIM = {}\nCC = {}\nMSE = {}\n".format(sim_value, cc_value, mse_value))
-#
-#     return sim_value, cc_value, mse_value
-
-# input_frame = np.reshape(input_x[0][3][:, :, :], input_x.shape[2:5])
-# label_frame = np.reshape(label_y[0][3][:, :, :], label_y.shape[2:4])
-# pred_frame = np.reshape(pred[0][3][:, :, :], pred.shape[2:4])
-# ce_frame = np.reshape(cross_entropy_out[0][3][:, :, :], cross_entropy_out.shape[2:4])
-#
-# print(np.sum(np.abs(ce_frame-label_frame)))
-# print(np.sum(np.abs(pred_frame-label_frame)))
-#
-# plt.subplot(211)
-# plt.imshow(input_frame)
-# plt.subplot(212)
-# plt.imshow(label_frame)
-# plt.show()
-#
-# print(label_frame.shape)
-#
-# diff = np.sum(np.abs(cross_entropy_out-pred))
-# print(diff)
-# print(label_y.shape)
-# print(input_x.shape)
-# print(cross_entropy_out.shape)
-# print(cross_entropy_out)
-# print(pred)

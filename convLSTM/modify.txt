@@ -1,0 +1,3 @@
+train() inside model.py
+Activation function for validation in train.py
+Change dtype in parse function

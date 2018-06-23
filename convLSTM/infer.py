@@ -83,7 +83,7 @@ def sim(list, pred, label):
 
 def cc(cc_list, pred, label):
     # Pred and label have shapes (batch_size, frames, height, width, channels)
-    warnings.simplefilter("error", RuntimeWarning)
+    # warnings.simplefilter("error", RuntimeWarning)
 
     num_videos = pred.shape[0]
     num_frames = pred.shape[1]

@@ -1,0 +1,1632 @@
+Options selected:
+ machine = 3
+ gpu = 0.75
+ train_dir = /home/rafael/Documents/ic/src/data/train/tfr/rgb_raw/*
+ val_filename = /home/rafael/Documents/ic/src/data/val/tfr/val_raw_rgb.tfrecords
+ colorspace = rgb
+ norm_type = None
+ norm_dim = raw
+
+Global variables before init:
+Conv input_shape:  (?, ?, 135, 240, 3)
+Conv output op_name =  Tensor("conv/conv2d/Relu:0", shape=(?, 135, 240, 32), dtype=float32)
+Conv output_shape:  (?, ?, 135, 240, 32)
+Conv input_shape:  (?, ?, 135, 240, 32)
+Conv output_shape:  (?, ?, 68, 120, 32)
+Conv input_shape:  (?, ?, 68, 120, 32)
+Conv output op_name =  Tensor("conv_1/conv2d/Relu:0", shape=(?, 68, 120, 64), dtype=float32)
+Conv output_shape:  (?, ?, 68, 120, 64)
+Conv input_shape:  (?, ?, 68, 120, 64)
+Conv output_shape:  (?, ?, 34, 60, 64)
+ConvLSTM input_shape:  (?, ?, 34, 60, 64)
+Batch_size:  Tensor("convLSTM/strided_slice:0", shape=(), dtype=int32)
+ConvLSTM input_shape:  (?, ?, 34, 60, 128)
+Batch_size:  Tensor("convLSTM_1/strided_slice:0", shape=(), dtype=int32)
+ConvLSTM input_shape:  (?, ?, 34, 60, 64)
+Batch_size:  Tensor("convLSTM_2/strided_slice:0", shape=(), dtype=int32)
+Conv input_shape:  (?, ?, 34, 60, 64)
+Conv output_shape:  (?, ?, 68, 120, 64)
+Conv input_shape:  (?, ?, 68, 120, 64)
+Conv output_shape:  (?, ?, 136, 240, 32)
+Conv input_shape:  (?, ?, 136, 240, 32)
+Conv output op_name =  Tensor("conv_2/conv2d/BiasAdd:0", shape=(?, 136, 240, 1), dtype=float32)
+Conv output_shape:  (?, ?, 136, 240, 1)
+Conv input_shape:  (?, ?, 136, 240, 1)
+Resize output shape =  Tensor("resize/resize_image_with_crop_or_pad/control_dependency_1:0", shape=(?, 135, 240, 1), dtype=float32)
+Conv output_shape:  (?, ?, 135, 240, 1)
+Logits op name before rename =  Tensor("Reshape_15:0", shape=(?, ?, 135, 240, 1), dtype=float32)
+Logits op name =  Tensor("logits:0", shape=(?, ?, 135, 240, 1), dtype=float32)
+Tensor("loss:0", shape=(), dtype=float32)
+<tf.Variable 'conv2d/kernel:0' shape=(5, 5, 3, 32) dtype=float32_ref>
+(5, 5, 3, 32)
+<tf.Variable 'conv2d/bias:0' shape=(32,) dtype=float32_ref>
+(32,)
+<tf.Variable 'conv2d_1/kernel:0' shape=(5, 5, 32, 64) dtype=float32_ref>
+(5, 5, 32, 64)
+<tf.Variable 'conv2d_1/bias:0' shape=(64,) dtype=float32_ref>
+(64,)
+<tf.Variable 'convLSTM//conv_2d_lstm_cell/kernel:0' shape=(5, 5, 192, 512) dtype=float32_ref>
+(5, 5, 192, 512)
+<tf.Variable 'convLSTM//conv_2d_lstm_cell/biases:0' shape=(512,) dtype=float32_ref>
+(512,)
+<tf.Variable 'convLSTM_1//conv_2d_lstm_cell/kernel:0' shape=(5, 5, 192, 256) dtype=float32_ref>
+(5, 5, 192, 256)
+<tf.Variable 'convLSTM_1//conv_2d_lstm_cell/biases:0' shape=(256,) dtype=float32_ref>
+(256,)
+<tf.Variable 'convLSTM_2//conv_2d_lstm_cell/kernel:0' shape=(5, 5, 128, 256) dtype=float32_ref>
+(5, 5, 128, 256)
+<tf.Variable 'convLSTM_2//conv_2d_lstm_cell/biases:0' shape=(256,) dtype=float32_ref>
+(256,)
+<tf.Variable 'conv2d_transpose/kernel:0' shape=(5, 5, 64, 64) dtype=float32_ref>
+(5, 5, 64, 64)
+<tf.Variable 'conv2d_transpose/bias:0' shape=(64,) dtype=float32_ref>
+(64,)
+<tf.Variable 'conv2d_transpose_1/kernel:0' shape=(5, 5, 32, 64) dtype=float32_ref>
+(5, 5, 32, 64)
+<tf.Variable 'conv2d_transpose_1/bias:0' shape=(32,) dtype=float32_ref>
+(32,)
+<tf.Variable 'conv2d_2/kernel:0' shape=(1, 1, 32, 1) dtype=float32_ref>
+(1, 1, 32, 1)
+<tf.Variable 'conv2d_2/bias:0' shape=(1,) dtype=float32_ref>
+(1,)
+Params:  4714049
+Epoch 1 completed in 240.93489813804626 seconds.
+Average cross-entropy loss is: 0.689
+
+Finished validating in 43.367s
+Epoch 1's loss in validation set: 0.6866
+SIM = 0.325
+CC = -0.010
+MSE = 0.203
+
+Training time left =  1 day, 15:24:26.629377
+Epoch 2 completed in 239.2516450881958 seconds.
+Average cross-entropy loss is: 0.684
+
+Finished validating in 43.333s
+Epoch 2's loss in validation set: 0.6821
+SIM = 0.324
+CC = -0.014
+MSE = 0.200
+
+Training time left =  1 day, 15:12:34.760555
+Epoch 3 completed in 240.40738224983215 seconds.
+Average cross-entropy loss is: 0.68
+
+Finished validating in 43.009s
+Epoch 3's loss in validation set: 0.6775
+SIM = 0.323
+CC = -0.020
+MSE = 0.198
+
+Training time left =  1 day, 15:07:46.850272
+Epoch 4 completed in 240.84955263137817 seconds.
+Average cross-entropy loss is: 0.675
+
+Finished validating in 42.955s
+Epoch 4's loss in validation set: 0.6728
+SIM = 0.322
+CC = -0.026
+MSE = 0.196
+
+Training time left =  1 day, 15:03:49.290187
+Epoch 5 completed in 240.82837772369385 seconds.
+Average cross-entropy loss is: 0.67
+
+Finished validating in 43.190s
+Epoch 5's loss in validation set: 0.6680
+SIM = 0.321
+CC = -0.032
+MSE = 0.193
+
+Training time left =  1 day, 14:59:54.395511
+Epoch 6 completed in 240.7200870513916 seconds.
+Average cross-entropy loss is: 0.665
+
+Finished validating in 42.814s
+Epoch 6's loss in validation set: 0.6632
+SIM = 0.320
+CC = -0.037
+MSE = 0.191
+
+Training time left =  1 day, 14:55:03.300414
+Epoch 7 completed in 240.97609901428223 seconds.
+Average cross-entropy loss is: 0.66
+
+Finished validating in 43.053s
+Epoch 7's loss in validation set: 0.6584
+SIM = 0.319
+CC = -0.041
+MSE = 0.188
+
+Training time left =  1 day, 14:50:49.203630
+Epoch 8 completed in 240.87805795669556 seconds.
+Average cross-entropy loss is: 0.655
+
+Finished validating in 42.814s
+Epoch 8's loss in validation set: 0.6536
+SIM = 0.318
+CC = -0.045
+MSE = 0.186
+
+Training time left =  1 day, 14:46:06.892485
+Epoch 9 completed in 240.87913155555725 seconds.
+Average cross-entropy loss is: 0.65
+
+Finished validating in 42.843s
+Epoch 9's loss in validation set: 0.6487
+SIM = 0.317
+CC = -0.048
+MSE = 0.184
+
+Training time left =  1 day, 14:41:25.929620
+Epoch 10 completed in 240.97932195663452 seconds.
+Average cross-entropy loss is: 0.645
+
+Finished validating in 42.821s
+Epoch 10's loss in validation set: 0.6439
+SIM = 0.317
+CC = -0.051
+MSE = 0.181
+
+Training time left =  1 day, 14:36:48.264927
+Epoch 11 completed in 241.14806747436523 seconds.
+Average cross-entropy loss is: 0.641
+
+Finished validating in 43.156s
+Epoch 11's loss in validation set: 0.6391
+SIM = 0.316
+CC = -0.054
+MSE = 0.179
+
+Training time left =  1 day, 14:32:31.873622
+Epoch 12 completed in 240.92787337303162 seconds.
+Average cross-entropy loss is: 0.636
+
+Finished validating in 42.769s
+Epoch 12's loss in validation set: 0.6343
+SIM = 0.316
+CC = -0.056
+MSE = 0.177
+
+Training time left =  1 day, 14:27:46.133156
+Epoch 13 completed in 241.1567153930664 seconds.
+Average cross-entropy loss is: 0.631
+
+Finished validating in 43.282s
+Epoch 13's loss in validation set: 0.6296
+SIM = 0.315
+CC = -0.059
+MSE = 0.174
+
+Training time left =  1 day, 14:23:28.479936
+Epoch 14 completed in 241.12503170967102 seconds.
+Average cross-entropy loss is: 0.626
+
+Finished validating in 42.786s
+Epoch 14's loss in validation set: 0.6248
+SIM = 0.315
+CC = -0.061
+MSE = 0.172
+
+Training time left =  1 day, 14:18:48.695981
+Epoch 15 completed in 241.03694200515747 seconds.
+Average cross-entropy loss is: 0.621
+
+Finished validating in 42.772s
+Epoch 15's loss in validation set: 0.6201
+SIM = 0.315
+CC = -0.063
+MSE = 0.169
+
+Training time left =  1 day, 14:14:05.062199
+Epoch 16 completed in 240.88254523277283 seconds.
+Average cross-entropy loss is: 0.616
+
+Finished validating in 42.934s
+Epoch 16's loss in validation set: 0.6154
+SIM = 0.314
+CC = -0.066
+MSE = 0.167
+
+Training time left =  1 day, 14:09:21.639750
+Epoch 17 completed in 241.0918107032776 seconds.
+Average cross-entropy loss is: 0.612
+
+Finished validating in 42.772s
+Epoch 17's loss in validation set: 0.6108
+SIM = 0.314
+CC = -0.068
+MSE = 0.165
+
+Training time left =  1 day, 14:04:39.516295
+Epoch 18 completed in 240.96156692504883 seconds.
+Average cross-entropy loss is: 0.607
+
+Finished validating in 42.846s
+Epoch 18's loss in validation set: 0.6061
+SIM = 0.314
+CC = -0.070
+MSE = 0.163
+
+Training time left =  1 day, 13:59:55.679085
+Epoch 19 completed in 241.0477261543274 seconds.
+Average cross-entropy loss is: 0.602
+
+Finished validating in 43.163s
+Epoch 19's loss in validation set: 0.6015
+SIM = 0.313
+CC = -0.072
+MSE = 0.160
+
+Training time left =  1 day, 13:55:22.044032
+Epoch 20 completed in 241.33711886405945 seconds.
+Average cross-entropy loss is: 0.598
+
+Finished validating in 42.914s
+Epoch 20's loss in validation set: 0.5970
+SIM = 0.313
+CC = -0.074
+MSE = 0.158
+
+Training time left =  1 day, 13:50:48.337172
+Epoch 21 completed in 240.9485034942627 seconds.
+Average cross-entropy loss is: 0.593
+
+Finished validating in 42.916s
+Epoch 21's loss in validation set: 0.5924
+SIM = 0.313
+CC = -0.077
+MSE = 0.156
+
+Training time left =  1 day, 13:46:04.802252
+Epoch 22 completed in 240.78589248657227 seconds.
+Average cross-entropy loss is: 0.588
+
+Finished validating in 42.943s
+Epoch 22's loss in validation set: 0.5879
+SIM = 0.312
+CC = -0.079
+MSE = 0.154
+
+Training time left =  1 day, 13:41:18.283536
+Epoch 23 completed in 240.8867642879486 seconds.
+Average cross-entropy loss is: 0.584
+
+Finished validating in 43.220s
+Epoch 23's loss in validation set: 0.5834
+SIM = 0.312
+CC = -0.081
+MSE = 0.151
+
+Training time left =  1 day, 13:36:39.855064
+Epoch 24 completed in 240.81192564964294 seconds.
+Average cross-entropy loss is: 0.579
+
+Finished validating in 42.836s
+Epoch 24's loss in validation set: 0.5789
+SIM = 0.311
+CC = -0.084
+MSE = 0.149
+
+Training time left =  1 day, 13:31:51.853733
+Epoch 25 completed in 241.06068420410156 seconds.
+Average cross-entropy loss is: 0.575
+
+Finished validating in 42.953s
+Epoch 25's loss in validation set: 0.5744
+SIM = 0.311
+CC = -0.086
+MSE = 0.147
+
+Training time left =  1 day, 13:27:11.153108
+Epoch 26 completed in 240.81912755966187 seconds.
+Average cross-entropy loss is: 0.57
+
+Finished validating in 42.991s
+Epoch 26's loss in validation set: 0.5699
+SIM = 0.310
+CC = -0.088
+MSE = 0.145
+
+Training time left =  1 day, 13:22:26.474438
+Epoch 27 completed in 240.9244041442871 seconds.
+Average cross-entropy loss is: 0.565
+
+Finished validating in 42.693s
+Epoch 27's loss in validation set: 0.5655
+SIM = 0.310
+CC = -0.091
+MSE = 0.143
+
+Training time left =  1 day, 13:17:38.487475
+Epoch 28 completed in 241.2009699344635 seconds.
+Average cross-entropy loss is: 0.561
+
+Finished validating in 42.922s
+Epoch 28's loss in validation set: 0.5611
+SIM = 0.309
+CC = -0.093
+MSE = 0.140
+
+Training time left =  1 day, 13:12:59.342723
+Epoch 29 completed in 240.60362219810486 seconds.
+Average cross-entropy loss is: 0.556
+
+Finished validating in 42.926s
+Epoch 29's loss in validation set: 0.5567
+SIM = 0.308
+CC = -0.095
+MSE = 0.138
+
+Training time left =  1 day, 13:08:10.207623
+Epoch 30 completed in 240.88872480392456 seconds.
+Average cross-entropy loss is: 0.552
+
+Finished validating in 42.781s
+Epoch 30's loss in validation set: 0.5523
+SIM = 0.308
+CC = -0.097
+MSE = 0.136
+
+Training time left =  1 day, 13:03:23.648980
+Epoch 31 completed in 241.09951663017273 seconds.
+Average cross-entropy loss is: 0.548
+
+Finished validating in 42.804s
+Epoch 31's loss in validation set: 0.5480
+SIM = 0.307
+CC = -0.099
+MSE = 0.134
+
+Training time left =  1 day, 12:58:40.806134
+Epoch 32 completed in 241.02005434036255 seconds.
+Average cross-entropy loss is: 0.543
+
+Finished validating in 42.804s
+Epoch 32's loss in validation set: 0.5437
+SIM = 0.306
+CC = -0.101
+MSE = 0.132
+
+Training time left =  1 day, 12:53:56.734758
+Epoch 33 completed in 240.7878758907318 seconds.
+Average cross-entropy loss is: 0.539
+
+Finished validating in 42.738s
+Epoch 33's loss in validation set: 0.5393
+SIM = 0.306
+CC = -0.103
+MSE = 0.130
+
+Training time left =  1 day, 12:49:08.462177
+Epoch 34 completed in 241.0054633617401 seconds.
+Average cross-entropy loss is: 0.534
+
+Finished validating in 42.632s
+Epoch 34's loss in validation set: 0.5351
+SIM = 0.305
+CC = -0.105
+MSE = 0.128
+
+Training time left =  1 day, 12:44:21.993653
+Epoch 35 completed in 241.24430108070374 seconds.
+Average cross-entropy loss is: 0.53
+
+Finished validating in 42.693s
+Epoch 35's loss in validation set: 0.5308
+SIM = 0.304
+CC = -0.107
+MSE = 0.126
+
+Training time left =  1 day, 12:39:39.678030
+Epoch 36 completed in 241.0344796180725 seconds.
+Average cross-entropy loss is: 0.526
+
+Finished validating in 42.830s
+Epoch 36's loss in validation set: 0.5265
+SIM = 0.304
+CC = -0.109
+MSE = 0.124
+
+Training time left =  1 day, 12:34:56.333031
+Epoch 37 completed in 240.8480076789856 seconds.
+Average cross-entropy loss is: 0.521
+
+Finished validating in 42.870s
+Epoch 37's loss in validation set: 0.5223
+SIM = 0.303
+CC = -0.110
+MSE = 0.122
+
+Training time left =  1 day, 12:30:11.123109
+Epoch 38 completed in 241.08900022506714 seconds.
+Average cross-entropy loss is: 0.517
+
+Finished validating in 43.017s
+Epoch 38's loss in validation set: 0.5180
+SIM = 0.302
+CC = -0.112
+MSE = 0.120
+
+Training time left =  1 day, 12:25:30.712169
+Epoch 39 completed in 241.20257353782654 seconds.
+Average cross-entropy loss is: 0.513
+
+Finished validating in 42.928s
+Epoch 39's loss in validation set: 0.5138
+SIM = 0.301
+CC = -0.113
+MSE = 0.118
+
+Training time left =  1 day, 12:20:50.400233
+Epoch 40 completed in 241.4078209400177 seconds.
+Average cross-entropy loss is: 0.508
+
+Finished validating in 43.164s
+Epoch 40's loss in validation set: 0.5096
+SIM = 0.300
+CC = -0.115
+MSE = 0.116
+
+Training time left =  1 day, 12:16:14.969601
+Epoch 41 completed in 241.3954885005951 seconds.
+Average cross-entropy loss is: 0.504
+
+Finished validating in 42.872s
+Epoch 41's loss in validation set: 0.5055
+SIM = 0.300
+CC = -0.116
+MSE = 0.114
+
+Training time left =  1 day, 12:11:35.687537
+Epoch 42 completed in 241.3560299873352 seconds.
+Average cross-entropy loss is: 0.5
+
+Finished validating in 42.996s
+Epoch 42's loss in validation set: 0.5013
+SIM = 0.299
+CC = -0.117
+MSE = 0.112
+
+Training time left =  1 day, 12:06:57.086757
+Epoch 43 completed in 241.1758348941803 seconds.
+Average cross-entropy loss is: 0.496
+
+Finished validating in 43.129s
+Epoch 43's loss in validation set: 0.4972
+SIM = 0.298
+CC = -0.118
+MSE = 0.110
+
+Training time left =  1 day, 12:02:17.725657
+Epoch 44 completed in 241.33603429794312 seconds.
+Average cross-entropy loss is: 0.491
+
+Finished validating in 42.867s
+Epoch 44's loss in validation set: 0.4931
+SIM = 0.297
+CC = -0.119
+MSE = 0.108
+
+Training time left =  1 day, 11:57:37.076189
+Epoch 45 completed in 241.00253415107727 seconds.
+Average cross-entropy loss is: 0.487
+
+Finished validating in 42.972s
+Epoch 45's loss in validation set: 0.4890
+SIM = 0.296
+CC = -0.120
+MSE = 0.106
+
+Training time left =  1 day, 11:52:53.964449
+Epoch 46 completed in 241.05695819854736 seconds.
+Average cross-entropy loss is: 0.483
+
+Finished validating in 42.911s
+Epoch 46's loss in validation set: 0.4850
+SIM = 0.295
+CC = -0.121
+MSE = 0.105
+
+Training time left =  1 day, 11:48:10.752168
+Epoch 47 completed in 241.08444476127625 seconds.
+Average cross-entropy loss is: 0.479
+
+Finished validating in 43.024s
+Epoch 47's loss in validation set: 0.4809
+SIM = 0.295
+CC = -0.122
+MSE = 0.103
+
+Training time left =  1 day, 11:43:28.855462
+Epoch 48 completed in 241.2105107307434 seconds.
+Average cross-entropy loss is: 0.475
+
+Finished validating in 43.017s
+Epoch 48's loss in validation set: 0.4769
+SIM = 0.294
+CC = -0.123
+MSE = 0.101
+
+Training time left =  1 day, 11:38:47.988729
+Epoch 49 completed in 241.149836063385 seconds.
+Average cross-entropy loss is: 0.471
+
+Finished validating in 42.878s
+Epoch 49's loss in validation set: 0.4729
+SIM = 0.293
+CC = -0.124
+MSE = 0.099
+
+Training time left =  1 day, 11:34:05.145758
+Epoch 50 completed in 241.10920929908752 seconds.
+Average cross-entropy loss is: 0.467
+
+Finished validating in 42.981s
+Epoch 50's loss in validation set: 0.4690
+SIM = 0.293
+CC = -0.124
+MSE = 0.097
+
+Training time left =  1 day, 11:29:22.816427
+Epoch 51 completed in 241.17702388763428 seconds.
+Average cross-entropy loss is: 0.462
+
+Finished validating in 43.003s
+Epoch 51's loss in validation set: 0.4650
+SIM = 0.292
+CC = -0.125
+MSE = 0.096
+
+Training time left =  1 day, 11:24:41.209741
+Epoch 52 completed in 241.07760381698608 seconds.
+Average cross-entropy loss is: 0.458
+
+Finished validating in 43.138s
+Epoch 52's loss in validation set: 0.4611
+SIM = 0.292
+CC = -0.126
+MSE = 0.094
+
+Training time left =  1 day, 11:19:59.813701
+Epoch 53 completed in 241.08847212791443 seconds.
+Average cross-entropy loss is: 0.454
+
+Finished validating in 42.842s
+Epoch 53's loss in validation set: 0.4572
+SIM = 0.291
+CC = -0.126
+MSE = 0.092
+
+Training time left =  1 day, 11:15:15.908763
+Epoch 54 completed in 241.20238852500916 seconds.
+Average cross-entropy loss is: 0.45
+
+Finished validating in 43.074s
+Epoch 54's loss in validation set: 0.4533
+SIM = 0.291
+CC = -0.127
+MSE = 0.090
+
+Training time left =  1 day, 11:10:34.853749
+Epoch 55 completed in 241.53353834152222 seconds.
+Average cross-entropy loss is: 0.446
+
+Finished validating in 43.054s
+Epoch 55's loss in validation set: 0.4494
+SIM = 0.290
+CC = -0.127
+MSE = 0.089
+
+Training time left =  1 day, 11:05:56.198712
+Epoch 56 completed in 241.1898708343506 seconds.
+Average cross-entropy loss is: 0.442
+
+Finished validating in 42.996s
+Epoch 56's loss in validation set: 0.4456
+SIM = 0.290
+CC = -0.128
+MSE = 0.087
+
+Training time left =  1 day, 11:01:14.147337
+Epoch 57 completed in 241.2895267009735 seconds.
+Average cross-entropy loss is: 0.438
+
+Finished validating in 43.001s
+Epoch 57's loss in validation set: 0.4418
+SIM = 0.289
+CC = -0.128
+MSE = 0.085
+
+Training time left =  1 day, 10:56:32.835986
+Epoch 58 completed in 241.1378312110901 seconds.
+Average cross-entropy loss is: 0.435
+
+Finished validating in 43.024s
+Epoch 58's loss in validation set: 0.4380
+SIM = 0.289
+CC = -0.129
+MSE = 0.084
+
+Training time left =  1 day, 10:51:50.439303
+Epoch 59 completed in 241.0888910293579 seconds.
+Average cross-entropy loss is: 0.431
+
+Finished validating in 43.051s
+Epoch 59's loss in validation set: 0.4342
+SIM = 0.288
+CC = -0.129
+MSE = 0.082
+
+Training time left =  1 day, 10:47:07.820542
+Epoch 60 completed in 241.05956888198853 seconds.
+Average cross-entropy loss is: 0.427
+
+Finished validating in 42.852s
+Epoch 60's loss in validation set: 0.4305
+SIM = 0.288
+CC = -0.129
+MSE = 0.081
+
+Training time left =  1 day, 10:42:23.474569
+Epoch 61 completed in 241.08794569969177 seconds.
+Average cross-entropy loss is: 0.423
+
+Finished validating in 43.023s
+Epoch 61's loss in validation set: 0.4268
+SIM = 0.287
+CC = -0.130
+MSE = 0.079
+
+Training time left =  1 day, 10:37:40.579795
+Epoch 62 completed in 241.40410470962524 seconds.
+Average cross-entropy loss is: 0.419
+
+Finished validating in 43.076s
+Epoch 62's loss in validation set: 0.4231
+SIM = 0.286
+CC = -0.130
+MSE = 0.078
+
+Training time left =  1 day, 10:33:00.257634
+Epoch 63 completed in 241.42917823791504 seconds.
+Average cross-entropy loss is: 0.415
+
+Finished validating in 43.119s
+Epoch 63's loss in validation set: 0.4195
+SIM = 0.286
+CC = -0.130
+MSE = 0.076
+
+Training time left =  1 day, 10:28:20.269425
+Epoch 64 completed in 241.04318475723267 seconds.
+Average cross-entropy loss is: 0.412
+
+Finished validating in 43.033s
+Epoch 64's loss in validation set: 0.4159
+SIM = 0.285
+CC = -0.131
+MSE = 0.075
+
+Training time left =  1 day, 10:23:36.925540
+Epoch 65 completed in 241.04285430908203 seconds.
+Average cross-entropy loss is: 0.408
+
+Finished validating in 43.030s
+Epoch 65's loss in validation set: 0.4123
+SIM = 0.285
+CC = -0.131
+MSE = 0.073
+
+Training time left =  1 day, 10:18:53.536464
+Epoch 66 completed in 241.41136741638184 seconds.
+Average cross-entropy loss is: 0.404
+
+Finished validating in 42.937s
+Epoch 66's loss in validation set: 0.4088
+SIM = 0.284
+CC = -0.131
+MSE = 0.072
+
+Training time left =  1 day, 10:14:11.940035
+Epoch 67 completed in 241.2128975391388 seconds.
+Average cross-entropy loss is: 0.401
+
+Finished validating in 42.943s
+Epoch 67's loss in validation set: 0.4053
+SIM = 0.284
+CC = -0.131
+MSE = 0.070
+
+Training time left =  1 day, 10:09:29.019370
+Epoch 68 completed in 241.41502213478088 seconds.
+Average cross-entropy loss is: 0.397
+
+Finished validating in 42.933s
+Epoch 68's loss in validation set: 0.4019
+SIM = 0.283
+CC = -0.132
+MSE = 0.069
+
+Training time left =  1 day, 10:04:47.281521
+Epoch 69 completed in 241.16315484046936 seconds.
+Average cross-entropy loss is: 0.393
+
+Finished validating in 42.902s
+Epoch 69's loss in validation set: 0.3985
+SIM = 0.283
+CC = -0.132
+MSE = 0.068
+
+Training time left =  1 day, 10:00:03.702860
+Epoch 70 completed in 241.35809350013733 seconds.
+Average cross-entropy loss is: 0.39
+
+Finished validating in 42.916s
+Epoch 70's loss in validation set: 0.3952
+SIM = 0.282
+CC = -0.132
+MSE = 0.066
+
+Training time left =  1 day, 9:55:21.392819
+Epoch 71 completed in 241.37357568740845 seconds.
+Average cross-entropy loss is: 0.387
+
+Finished validating in 42.893s
+Epoch 71's loss in validation set: 0.3919
+SIM = 0.281
+CC = -0.132
+MSE = 0.065
+
+Training time left =  1 day, 9:50:38.983003
+Epoch 72 completed in 241.46058535575867 seconds.
+Average cross-entropy loss is: 0.383
+
+Finished validating in 42.961s
+Epoch 72's loss in validation set: 0.3887
+SIM = 0.281
+CC = -0.132
+MSE = 0.064
+
+Training time left =  1 day, 9:45:57.439929
+Epoch 73 completed in 241.2411594390869 seconds.
+Average cross-entropy loss is: 0.38
+
+Finished validating in 43.132s
+Epoch 73's loss in validation set: 0.3855
+SIM = 0.280
+CC = -0.133
+MSE = 0.063
+
+Training time left =  1 day, 9:41:15.534225
+Epoch 74 completed in 241.37409710884094 seconds.
+Average cross-entropy loss is: 0.377
+
+Finished validating in 43.092s
+Epoch 74's loss in validation set: 0.3824
+SIM = 0.280
+CC = -0.133
+MSE = 0.061
+
+Training time left =  1 day, 9:36:34.098785
+Epoch 75 completed in 241.35734272003174 seconds.
+Average cross-entropy loss is: 0.373
+
+Finished validating in 42.788s
+Epoch 75's loss in validation set: 0.3793
+SIM = 0.279
+CC = -0.133
+MSE = 0.060
+
+Training time left =  1 day, 9:31:50.762293
+Epoch 76 completed in 241.3460602760315 seconds.
+Average cross-entropy loss is: 0.37
+
+Finished validating in 43.039s
+Epoch 76's loss in validation set: 0.3763
+SIM = 0.279
+CC = -0.133
+MSE = 0.059
+
+Training time left =  1 day, 9:27:08.744324
+Epoch 77 completed in 241.17786741256714 seconds.
+Average cross-entropy loss is: 0.367
+
+Finished validating in 42.981s
+Epoch 77's loss in validation set: 0.3734
+SIM = 0.278
+CC = -0.133
+MSE = 0.058
+
+Training time left =  1 day, 9:22:25.424164
+Epoch 78 completed in 241.1412045955658 seconds.
+Average cross-entropy loss is: 0.364
+
+Finished validating in 42.983s
+Epoch 78's loss in validation set: 0.3705
+SIM = 0.277
+CC = -0.134
+MSE = 0.057
+
+Training time left =  1 day, 9:17:41.893194
+Epoch 79 completed in 241.48728251457214 seconds.
+Average cross-entropy loss is: 0.361
+
+Finished validating in 42.875s
+Epoch 79's loss in validation set: 0.3677
+SIM = 0.277
+CC = -0.134
+MSE = 0.056
+
+Training time left =  1 day, 9:12:59.617483
+Epoch 80 completed in 241.4579815864563 seconds.
+Average cross-entropy loss is: 0.358
+
+Finished validating in 43.068s
+Epoch 80's loss in validation set: 0.3649
+SIM = 0.276
+CC = -0.134
+MSE = 0.055
+
+Training time left =  1 day, 9:08:18.145823
+Epoch 81 completed in 241.25166392326355 seconds.
+Average cross-entropy loss is: 0.355
+
+Finished validating in 42.948s
+Epoch 81's loss in validation set: 0.3622
+SIM = 0.275
+CC = -0.134
+MSE = 0.054
+
+Training time left =  1 day, 9:03:34.911637
+Epoch 82 completed in 244.30638217926025 seconds.
+Average cross-entropy loss is: 0.352
+
+Finished validating in 42.975s
+Epoch 82's loss in validation set: 0.3596
+SIM = 0.275
+CC = -0.134
+MSE = 0.053
+
+Training time left =  1 day, 8:59:07.364542
+Epoch 83 completed in 245.76682877540588 seconds.
+Average cross-entropy loss is: 0.35
+
+Finished validating in 42.910s
+Epoch 83's loss in validation set: 0.3570
+SIM = 0.274
+CC = -0.134
+MSE = 0.052
+
+Training time left =  1 day, 8:54:46.351844
+Epoch 84 completed in 248.74947834014893 seconds.
+Average cross-entropy loss is: 0.347
+
+Finished validating in 42.990s
+Epoch 84's loss in validation set: 0.3545
+SIM = 0.274
+CC = -0.134
+MSE = 0.051
+
+Training time left =  1 day, 8:50:39.846694
+Epoch 85 completed in 250.4062581062317 seconds.
+Average cross-entropy loss is: 0.344
+
+Finished validating in 43.148s
+Epoch 85's loss in validation set: 0.3521
+SIM = 0.273
+CC = -0.135
+MSE = 0.051
+
+Training time left =  1 day, 8:46:41.137773
+Epoch 86 completed in 245.42075896263123 seconds.
+Average cross-entropy loss is: 0.342
+
+Finished validating in 43.312s
+Epoch 86's loss in validation set: 0.3497
+SIM = 0.272
+CC = -0.135
+MSE = 0.050
+
+Training time left =  1 day, 8:42:17.942529
+Epoch 87 completed in 243.117915391922 seconds.
+Average cross-entropy loss is: 0.339
+
+Finished validating in 43.109s
+Epoch 87's loss in validation set: 0.3475
+SIM = 0.272
+CC = -0.135
+MSE = 0.049
+
+Training time left =  1 day, 8:37:42.264824
+Epoch 88 completed in 241.79913115501404 seconds.
+Average cross-entropy loss is: 0.337
+
+Finished validating in 42.998s
+Epoch 88's loss in validation set: 0.3452
+SIM = 0.271
+CC = -0.135
+MSE = 0.048
+
+Training time left =  1 day, 8:32:59.653482
+Epoch 89 completed in 241.82469081878662 seconds.
+Average cross-entropy loss is: 0.335
+
+Finished validating in 43.210s
+Epoch 89's loss in validation set: 0.3431
+SIM = 0.270
+CC = -0.135
+MSE = 0.048
+
+Training time left =  1 day, 8:28:18.092038
+Epoch 90 completed in 241.56824278831482 seconds.
+Average cross-entropy loss is: 0.332
+
+Finished validating in 43.064s
+Epoch 90's loss in validation set: 0.3410
+SIM = 0.270
+CC = -0.135
+MSE = 0.047
+
+Training time left =  1 day, 8:23:34.617068
+Epoch 91 completed in 242.04964685440063 seconds.
+Average cross-entropy loss is: 0.33
+
+Finished validating in 43.053s
+Epoch 91's loss in validation set: 0.3390
+SIM = 0.269
+CC = -0.135
+MSE = 0.046
+
+Training time left =  1 day, 8:18:53.230807
+Epoch 92 completed in 241.7346682548523 seconds.
+Average cross-entropy loss is: 0.328
+
+Finished validating in 43.010s
+Epoch 92's loss in validation set: 0.3371
+SIM = 0.268
+CC = -0.135
+MSE = 0.046
+
+Training time left =  1 day, 8:14:10.179896
+Epoch 93 completed in 241.43740916252136 seconds.
+Average cross-entropy loss is: 0.326
+
+Finished validating in 43.059s
+Epoch 93's loss in validation set: 0.3352
+SIM = 0.268
+CC = -0.136
+MSE = 0.045
+
+Training time left =  1 day, 8:09:26.004747
+Epoch 94 completed in 241.45426034927368 seconds.
+Average cross-entropy loss is: 0.324
+
+Finished validating in 42.986s
+Epoch 94's loss in validation set: 0.3334
+SIM = 0.267
+CC = -0.136
+MSE = 0.044
+
+Training time left =  1 day, 8:04:41.578125
+Epoch 95 completed in 241.18504905700684 seconds.
+Average cross-entropy loss is: 0.322
+
+Finished validating in 43.007s
+Epoch 95's loss in validation set: 0.3316
+SIM = 0.267
+CC = -0.136
+MSE = 0.044
+
+Training time left =  1 day, 7:59:56.094346
+Epoch 96 completed in 241.21434664726257 seconds.
+Average cross-entropy loss is: 0.32
+
+Finished validating in 43.121s
+Epoch 96's loss in validation set: 0.3300
+SIM = 0.266
+CC = -0.136
+MSE = 0.043
+
+Training time left =  1 day, 7:55:11.242099
+Epoch 97 completed in 240.99078130722046 seconds.
+Average cross-entropy loss is: 0.319
+
+Finished validating in 43.131s
+Epoch 97's loss in validation set: 0.3283
+SIM = 0.266
+CC = -0.136
+MSE = 0.043
+
+Training time left =  1 day, 7:50:25.513440
+Epoch 98 completed in 241.04229474067688 seconds.
+Average cross-entropy loss is: 0.317
+
+Finished validating in 42.997s
+Epoch 98's loss in validation set: 0.3268
+SIM = 0.266
+CC = -0.136
+MSE = 0.042
+
+Training time left =  1 day, 7:45:39.479025
+Epoch 99 completed in 241.0227415561676 seconds.
+Average cross-entropy loss is: 0.315
+
+Finished validating in 43.055s
+Epoch 99's loss in validation set: 0.3253
+SIM = 0.265
+CC = -0.136
+MSE = 0.042
+
+Training time left =  1 day, 7:40:53.639345
+Epoch 100 completed in 241.48159074783325 seconds.
+Average cross-entropy loss is: 0.314
+
+Finished validating in 43.085s
+Epoch 100's loss in validation set: 0.3239
+SIM = 0.265
+CC = -0.136
+MSE = 0.041
+
+Training time left =  1 day, 7:36:09.791471
+Epoch 101 completed in 241.19102668762207 seconds.
+Average cross-entropy loss is: 0.312
+
+Finished validating in 42.908s
+Epoch 101's loss in validation set: 0.3225
+SIM = 0.264
+CC = -0.136
+MSE = 0.041
+
+Training time left =  1 day, 7:31:24.083075
+Epoch 102 completed in 241.4123113155365 seconds.
+Average cross-entropy loss is: 0.311
+
+Finished validating in 43.087s
+Epoch 102's loss in validation set: 0.3212
+SIM = 0.264
+CC = -0.136
+MSE = 0.041
+
+Training time left =  1 day, 7:26:39.964857
+Epoch 103 completed in 240.97899556159973 seconds.
+Average cross-entropy loss is: 0.309
+
+Finished validating in 43.284s
+Epoch 103's loss in validation set: 0.3199
+SIM = 0.263
+CC = -0.136
+MSE = 0.040
+
+Training time left =  1 day, 7:21:54.929483
+Epoch 104 completed in 241.25530338287354 seconds.
+Average cross-entropy loss is: 0.308
+
+Finished validating in 42.921s
+Epoch 104's loss in validation set: 0.3187
+SIM = 0.263
+CC = -0.137
+MSE = 0.040
+
+Training time left =  1 day, 7:17:09.580247
+Epoch 105 completed in 241.2210876941681 seconds.
+Average cross-entropy loss is: 0.307
+
+Finished validating in 43.250s
+Epoch 105's loss in validation set: 0.3175
+SIM = 0.263
+CC = -0.137
+MSE = 0.040
+
+Training time left =  1 day, 7:12:25.360069
+Epoch 106 completed in 240.97756671905518 seconds.
+Average cross-entropy loss is: 0.305
+
+Finished validating in 42.963s
+Epoch 106's loss in validation set: 0.3164
+SIM = 0.262
+CC = -0.137
+MSE = 0.039
+
+Training time left =  1 day, 7:07:39.163845
+Epoch 107 completed in 241.3599407672882 seconds.
+Average cross-entropy loss is: 0.304
+
+Finished validating in 43.047s
+Epoch 107's loss in validation set: 0.3154
+SIM = 0.262
+CC = -0.137
+MSE = 0.039
+
+Training time left =  1 day, 7:02:54.724410
+Epoch 108 completed in 241.33802366256714 seconds.
+Average cross-entropy loss is: 0.303
+
+Finished validating in 42.730s
+Epoch 108's loss in validation set: 0.3144
+SIM = 0.261
+CC = -0.137
+MSE = 0.039
+
+Training time left =  1 day, 6:58:09.053535
+Epoch 109 completed in 241.0533812046051 seconds.
+Average cross-entropy loss is: 0.302
+
+Finished validating in 43.173s
+Epoch 109's loss in validation set: 0.3134
+SIM = 0.261
+CC = -0.137
+MSE = 0.038
+
+Training time left =  1 day, 6:53:23.979937
+Epoch 110 completed in 241.42611503601074 seconds.
+Average cross-entropy loss is: 0.301
+
+Finished validating in 42.936s
+Epoch 110's loss in validation set: 0.3125
+SIM = 0.260
+CC = -0.137
+MSE = 0.038
+
+Training time left =  1 day, 6:48:39.402949
+Epoch 111 completed in 241.05416703224182 seconds.
+Average cross-entropy loss is: 0.3
+
+Finished validating in 42.881s
+Epoch 111's loss in validation set: 0.3116
+SIM = 0.260
+CC = -0.137
+MSE = 0.038
+
+Training time left =  1 day, 6:43:53.335292
+Epoch 112 completed in 241.03376388549805 seconds.
+Average cross-entropy loss is: 0.299
+
+Finished validating in 42.904s
+Epoch 112's loss in validation set: 0.3107
+SIM = 0.260
+CC = -0.137
+MSE = 0.038
+
+Training time left =  1 day, 6:39:07.312565
+Epoch 113 completed in 241.22524571418762 seconds.
+Average cross-entropy loss is: 0.298
+
+Finished validating in 42.923s
+Epoch 113's loss in validation set: 0.3099
+SIM = 0.259
+CC = -0.137
+MSE = 0.037
+
+Training time left =  1 day, 6:34:22.048851
+Epoch 114 completed in 241.29979991912842 seconds.
+Average cross-entropy loss is: 0.297
+
+Finished validating in 43.111s
+Epoch 114's loss in validation set: 0.3092
+SIM = 0.259
+CC = -0.137
+MSE = 0.037
+
+Training time left =  1 day, 6:29:37.693651
+Epoch 115 completed in 241.4294912815094 seconds.
+Average cross-entropy loss is: 0.296
+
+Finished validating in 43.191s
+Epoch 115's loss in validation set: 0.3085
+SIM = 0.258
+CC = -0.137
+MSE = 0.037
+
+Training time left =  1 day, 6:24:54.040415
+Epoch 116 completed in 241.25184202194214 seconds.
+Average cross-entropy loss is: 0.295
+
+Finished validating in 43.214s
+Epoch 116's loss in validation set: 0.3078
+SIM = 0.258
+CC = -0.137
+MSE = 0.037
+
+Training time left =  1 day, 6:20:09.858157
+Epoch 117 completed in 241.1338291168213 seconds.
+Average cross-entropy loss is: 0.295
+
+Finished validating in 43.162s
+Epoch 117's loss in validation set: 0.3071
+SIM = 0.258
+CC = -0.137
+MSE = 0.037
+
+Training time left =  1 day, 6:15:25.115481
+Epoch 118 completed in 241.29035425186157 seconds.
+Average cross-entropy loss is: 0.294
+
+Finished validating in 42.904s
+Epoch 118's loss in validation set: 0.3065
+SIM = 0.257
+CC = -0.137
+MSE = 0.036
+
+Training time left =  1 day, 6:10:40.049319
+Epoch 119 completed in 241.18057703971863 seconds.
+Average cross-entropy loss is: 0.293
+
+Finished validating in 43.402s
+Epoch 119's loss in validation set: 0.3059
+SIM = 0.257
+CC = -0.137
+MSE = 0.036
+
+Training time left =  1 day, 6:05:56.243407
+Epoch 120 completed in 241.1592366695404 seconds.
+Average cross-entropy loss is: 0.292
+
+Finished validating in 42.927s
+Epoch 120's loss in validation set: 0.3053
+SIM = 0.256
+CC = -0.137
+MSE = 0.036
+
+Training time left =  1 day, 6:01:10.852615
+Epoch 121 completed in 241.3867964744568 seconds.
+Average cross-entropy loss is: 0.292
+
+Finished validating in 42.932s
+Epoch 121's loss in validation set: 0.3047
+SIM = 0.256
+CC = -0.137
+MSE = 0.036
+
+Training time left =  1 day, 5:56:26.211634
+Epoch 122 completed in 241.32934260368347 seconds.
+Average cross-entropy loss is: 0.291
+
+Finished validating in 42.960s
+Epoch 122's loss in validation set: 0.3042
+SIM = 0.255
+CC = -0.137
+MSE = 0.036
+
+Training time left =  1 day, 5:51:41.483825
+Epoch 123 completed in 241.37381315231323 seconds.
+Average cross-entropy loss is: 0.291
+
+Finished validating in 43.367s
+Epoch 123's loss in validation set: 0.3037
+SIM = 0.255
+CC = -0.138
+MSE = 0.036
+
+Training time left =  1 day, 5:46:58.148240
+Epoch 124 completed in 241.3176145553589 seconds.
+Average cross-entropy loss is: 0.29
+
+Finished validating in 43.062s
+Epoch 124's loss in validation set: 0.3033
+SIM = 0.255
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:42:13.692033
+Epoch 125 completed in 241.17779207229614 seconds.
+Average cross-entropy loss is: 0.289
+
+Finished validating in 42.894s
+Epoch 125's loss in validation set: 0.3028
+SIM = 0.254
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:37:28.315240
+Epoch 126 completed in 241.30649757385254 seconds.
+Average cross-entropy loss is: 0.289
+
+Finished validating in 43.115s
+Epoch 126's loss in validation set: 0.3024
+SIM = 0.254
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:32:43.997716
+Epoch 127 completed in 241.28068923950195 seconds.
+Average cross-entropy loss is: 0.288
+
+Finished validating in 43.201s
+Epoch 127's loss in validation set: 0.3020
+SIM = 0.253
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:27:59.855968
+Epoch 128 completed in 241.13252472877502 seconds.
+Average cross-entropy loss is: 0.288
+
+Finished validating in 43.098s
+Epoch 128's loss in validation set: 0.3016
+SIM = 0.253
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:23:14.976584
+Epoch 129 completed in 241.21029663085938 seconds.
+Average cross-entropy loss is: 0.287
+
+Finished validating in 42.883s
+Epoch 129's loss in validation set: 0.3012
+SIM = 0.252
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:18:29.713110
+Epoch 130 completed in 241.1182861328125 seconds.
+Average cross-entropy loss is: 0.287
+
+Finished validating in 42.903s
+Epoch 130's loss in validation set: 0.3009
+SIM = 0.252
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:13:44.262668
+Epoch 131 completed in 240.93329429626465 seconds.
+Average cross-entropy loss is: 0.287
+
+Finished validating in 42.990s
+Epoch 131's loss in validation set: 0.3006
+SIM = 0.252
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:08:58.557780
+Epoch 132 completed in 241.47623991966248 seconds.
+Average cross-entropy loss is: 0.286
+
+Finished validating in 43.004s
+Epoch 132's loss in validation set: 0.3002
+SIM = 0.251
+CC = -0.138
+MSE = 0.035
+
+Training time left =  1 day, 5:04:14.432471
+Epoch 133 completed in 241.0856168270111 seconds.
+Average cross-entropy loss is: 0.286
+
+Finished validating in 42.895s
+Epoch 133's loss in validation set: 0.2999
+SIM = 0.251
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:59:28.923875
+Epoch 134 completed in 241.22340536117554 seconds.
+Average cross-entropy loss is: 0.285
+
+Finished validating in 43.284s
+Epoch 134's loss in validation set: 0.2996
+SIM = 0.250
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:54:44.877836
+Epoch 135 completed in 240.90589928627014 seconds.
+Average cross-entropy loss is: 0.285
+
+Finished validating in 43.044s
+Epoch 135's loss in validation set: 0.2994
+SIM = 0.250
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:49:59.317385
+Epoch 136 completed in 241.44397640228271 seconds.
+Average cross-entropy loss is: 0.285
+
+Finished validating in 43.094s
+Epoch 136's loss in validation set: 0.2991
+SIM = 0.249
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:45:15.354572
+Epoch 137 completed in 241.35590624809265 seconds.
+Average cross-entropy loss is: 0.284
+
+Finished validating in 43.086s
+Epoch 137's loss in validation set: 0.2989
+SIM = 0.249
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:40:31.127598
+Epoch 138 completed in 241.56358909606934 seconds.
+Average cross-entropy loss is: 0.284
+
+Finished validating in 42.944s
+Epoch 138's loss in validation set: 0.2986
+SIM = 0.249
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:35:47.071715
+Epoch 139 completed in 241.76763486862183 seconds.
+Average cross-entropy loss is: 0.284
+
+Finished validating in 43.035s
+Epoch 139's loss in validation set: 0.2984
+SIM = 0.248
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:31:03.774691
+Epoch 140 completed in 240.9439902305603 seconds.
+Average cross-entropy loss is: 0.284
+
+Finished validating in 42.877s
+Epoch 140's loss in validation set: 0.2982
+SIM = 0.248
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:26:17.931032
+Epoch 141 completed in 241.28493523597717 seconds.
+Average cross-entropy loss is: 0.283
+
+Finished validating in 43.201s
+Epoch 141's loss in validation set: 0.2980
+SIM = 0.247
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:21:33.810447
+Epoch 142 completed in 241.35794115066528 seconds.
+Average cross-entropy loss is: 0.283
+
+Finished validating in 43.073s
+Epoch 142's loss in validation set: 0.2978
+SIM = 0.247
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:16:49.545059
+Epoch 143 completed in 241.30483436584473 seconds.
+Average cross-entropy loss is: 0.283
+
+Finished validating in 42.998s
+Epoch 143's loss in validation set: 0.2976
+SIM = 0.246
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:12:04.957145
+Epoch 144 completed in 241.54403114318848 seconds.
+Average cross-entropy loss is: 0.283
+
+Finished validating in 43.099s
+Epoch 144's loss in validation set: 0.2974
+SIM = 0.246
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:07:21.215011
+Epoch 145 completed in 241.34087014198303 seconds.
+Average cross-entropy loss is: 0.282
+
+Finished validating in 43.116s
+Epoch 145's loss in validation set: 0.2972
+SIM = 0.245
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 4:02:37.003517
+Epoch 146 completed in 241.3345911502838 seconds.
+Average cross-entropy loss is: 0.282
+
+Finished validating in 42.936s
+Epoch 146's loss in validation set: 0.2970
+SIM = 0.245
+CC = -0.138
+MSE = 0.034
+
+Training time left =  1 day, 3:57:52.338400
+Epoch 147 completed in 241.40160155296326 seconds.
+Average cross-entropy loss is: 0.282
+
+Finished validating in 43.100s
+Epoch 147's loss in validation set: 0.2969
+SIM = 0.244
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:53:08.232037
+Epoch 148 completed in 241.22370767593384 seconds.
+Average cross-entropy loss is: 0.282
+
+Finished validating in 42.844s
+Epoch 148's loss in validation set: 0.2967
+SIM = 0.244
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:48:23.088351
+Epoch 149 completed in 241.68935108184814 seconds.
+Average cross-entropy loss is: 0.282
+
+Finished validating in 43.192s
+Epoch 149's loss in validation set: 0.2966
+SIM = 0.243
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:43:39.875869
+Epoch 150 completed in 241.29119062423706 seconds.
+Average cross-entropy loss is: 0.281
+
+Finished validating in 42.746s
+Epoch 150's loss in validation set: 0.2964
+SIM = 0.243
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:38:54.671271
+Epoch 151 completed in 241.22180199623108 seconds.
+Average cross-entropy loss is: 0.281
+
+Finished validating in 43.015s
+Epoch 151's loss in validation set: 0.2963
+SIM = 0.243
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:34:09.945448
+Epoch 152 completed in 241.06737446784973 seconds.
+Average cross-entropy loss is: 0.281
+
+Finished validating in 43.287s
+Epoch 152's loss in validation set: 0.2961
+SIM = 0.242
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:29:25.493504
+Epoch 153 completed in 240.96978616714478 seconds.
+Average cross-entropy loss is: 0.281
+
+Finished validating in 43.185s
+Epoch 153's loss in validation set: 0.2960
+SIM = 0.242
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:24:40.591337
+Epoch 154 completed in 241.43939328193665 seconds.
+Average cross-entropy loss is: 0.281
+
+Finished validating in 42.795s
+Epoch 154's loss in validation set: 0.2959
+SIM = 0.241
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:19:55.877511
+Epoch 155 completed in 241.55399370193481 seconds.
+Average cross-entropy loss is: 0.28
+
+Finished validating in 42.703s
+Epoch 155's loss in validation set: 0.2958
+SIM = 0.241
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:15:11.221043
+Epoch 156 completed in 241.04187965393066 seconds.
+Average cross-entropy loss is: 0.28
+
+Finished validating in 42.972s
+Epoch 156's loss in validation set: 0.2957
+SIM = 0.240
+CC = -0.138
+MSE = 0.033
+
+Training time left =  1 day, 3:10:26.031803
