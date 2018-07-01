@@ -434,8 +434,8 @@ if __name__ == "__main__":
     clips_per_file = 1
     videos_per_record = 1
   elif options.num_files == "single":
-    clips_per_file = 1000
-    videos_per_record = 40
+    clips_per_file = 4000
+    videos_per_record = 1000
   else:
     exit(1)
 
@@ -446,6 +446,8 @@ if __name__ == "__main__":
     tfrecord_name = "{}_{}_{}".format(options.dataset, options.norm_dim, options.color_space)
   else:
     tfrecord_name = "{}_{}_{}_{}".format(options.dataset, options.norm_type, options.norm_dim, options.color_space)
+
+  tfrecord_name = "train_raw_rgb_augm_rng"
 
   print("tfrecord_name is {}".format(tfrecord_name))
 
@@ -458,8 +460,8 @@ if __name__ == "__main__":
     input_source_dir = ["/home/panda/raw_data/" + options.dataset + "/inputs"]
     label_source_dir = ["/home/panda/raw_data/" + options.dataset + "/labels"]
     if options.dataset == "train":
-        input_source_dir.append("/home/panda/augm_data/inputs")
-        label_source_dir.append("/home/panda/augm_data/labels")
+        input_source_dir.append("/home/panda/raw_data/augm_rng/inputs")
+        label_source_dir.append("/home/panda/raw_data/augm_rng/labels")
   elif options.machine == 2:
     destination = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/tfr"
     input_source_dir = ["/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/input"]

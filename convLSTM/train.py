@@ -395,6 +395,8 @@ if __name__ == "__main__":
     train_tfrecord_name = "{}_{}/*".format(options.color_space,
         str(options.norm_type + "_" + options.norm_dim) if norm_type else options.norm_dim)
 
+    train_tfrecord_name = "rgb_raw_augm_rng_alt/*"
+
     train_tfrecords_filename = os.path.join(config.train["train_tfrecords_filename"][m], train_tfrecord_name)
     val_tfrecords_filename = os.path.join(config.train["val_tfrecords_filename"][m], val_tfrecord_name)
 

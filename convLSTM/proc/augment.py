@@ -313,14 +313,15 @@ def save_video(x_fp, y_fp, name, x_save_dir, y_save_dir, rng):
         y_out[i].release()
 
 if __name__ == "__main__":
-    base_dir = "/home/rafael/Documents/ic/src/data/"
+    #base_dir = "/home/rafael/Documents/ic/src/data/"
+    base_dir = "/home/panda/raw_data"
     rng = False
 
     # Parse options
     parser = optparse.OptionParser()
     parser.add_option("-r", "--rng",
                       action="store_true", dest="rng",
-                      help="Paramters for augmentation functions are determined randomly per frame.",
+                      help="Paramaters for augmentation functions are determined randomly per frame.",
                       default=False)
     parser.add_option("-d", "--dest_dir",
                       action="store", type="string", dest="dest_dir",

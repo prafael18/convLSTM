@@ -3,10 +3,10 @@ train = {
     "machine_index": 2,
 
     "train_tfrecords_filename":
-        [["/home/rafael/Documents/unicamp/ic/src/data/train/tfr"],
-         ["/home/panda/ic/data/train"],
-         ["/home/storage_local/panda/data/train"],
-         ["/home/rafael/Documents/ic/src/data/train/tfr"]],
+        ["/home/rafael/Documents/unicamp/ic/src/data/train/tfr",
+         "/home/panda/ic/data/train",
+         "/home/storage_local/panda/data/train",
+         "/home/rafael/Documents/ic/src/data/train/tfr"],
 
     "val_tfrecords_filename":
         ["/home/rafael/Documents/unicamp/ic/src/data/val/tfr",
