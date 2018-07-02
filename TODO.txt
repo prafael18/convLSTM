@@ -1,0 +1,6 @@
+Aplicar regularização
+Augmentation melhor para vídeo
+Reduzir o tamanho da rede
+Transfer learning of state of the arte networks (e.g. DenseNet)
+Treinar os primeiros filtros convolucionais com datasets de saliência
+Leave one out

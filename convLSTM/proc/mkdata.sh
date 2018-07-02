@@ -6,4 +6,4 @@
 #python3 video2tfrecord.py -m 1 -s train -c rgb -n raw -f many -d raw_rgb_augm_rng
 
 
-python3 video2tfrecord.py -m 1 -s train -c rgb -n raw -f single
+python3 video2tfrecord.py -m 3 -s train -c rgb -n raw -f many -d rgb_raw_tv

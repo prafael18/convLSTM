@@ -12,7 +12,7 @@ import os
 # save_path = '/home/rafael/Documents/ic/src/convLSTM/proc/test'
 
 # tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/raw_rgb_lfs/*.tfrecords'
-tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/rgb_raw/*.tfrecords'
+tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/*'
 save_path = '/home/rafael/Documents/ic/src/'
 
 height = None
@@ -86,6 +86,13 @@ def readTFRecord(filepaths):
         width = int(example.features.feature['width']
                     .int64_list
                     .value[0])
+        video_id = int(example.features.feature['video_id']
+                    .int64_list
+                    .value[0])
+        clip_id = int(example.features.feature['clip_id']
+                    .int64_list
+                    .value[0])
+
         frames = int(example.features.feature['num_frames']
                      .int64_list
                      .value[0])
@@ -116,18 +123,20 @@ def readTFRecord(filepaths):
 
         label_video = np.reshape(label_video, label_video.shape[:-1])
         print(label_video.shape)
-        plt.imshow(label_video[5])
-        plt.show()
-        print("Video shape = ", input_video.shape)
+        print(video_id, clip_id)
+        if clip_id == 0 and video_id == 29:
+            plt.imshow(label_video[0])
+            plt.show()
+        # print("Video shape = ", input_video.shape)
 
         if "raw" in filename:
           video_name = '_'.join(filename.split('_')[:3])
         else:
           video_name = '_'.join(filename.split('_')[:4])
 
-        print (video_name)
+        # print (video_name)
 
-        save_video(video_name, input_video)
+        # save_video(video_name, input_video)
 
 if __name__ == "__main__":
   filenames = gfile.Glob(tfrecord_path)

@@ -58,7 +58,7 @@ def getNextFrame(cap):
 
 def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
                             current_record_num, total_record_num, input_dtype, label_dtype,
-                            max_frames_per_clip, clips_per_file):
+                            max_frames_per_clip, clips_per_file, clip_ids):
   """Converts an entire dataset into x tfrecords where x=videos/fragmentSize.
   :param input_data: ndarray(uint32) of shape (v,i,h,w,c) with v=number of videos, i=number of images, c=number of image
   channels, h=image height, w=image width
@@ -78,6 +78,8 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
   width = input_data[0].shape[2]
   writer = None
   feature = {}
+
+  print(clip_ids)
 
   print("Num videos = {}, height = {}, width = {}\n".format(num_clips, height, width))
 
@@ -104,10 +106,17 @@ def save_numpy_to_tfrecords(input_data, label_data, destination_path, name,
                         .astype(label_dtype)
                         .tostring())
 
+    vid_id = int(clip_ids[clip_count].split('_')[0])
+    clp_id = int(clip_ids[clip_count].split('_')[1])
+
+    print("Adding id {}_{}".format(vid_id, clp_id))
+
     feature['input'] = _bytes_feature(input_list)
     feature['label'] = _bytes_feature(label_list)
     feature['height'] = _int64_feature(height)
     feature['width'] = _int64_feature(width)
+    #feature['video_id'] = _int64_feature(vid_id)
+    #feature['clip_id'] = _int64_feature(clp_id)
     feature['num_frames'] = _int64_feature(max_frames_per_clip)
 
     example = tf.train.Example(features=tf.train.Features(feature=feature))
@@ -166,6 +175,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
   number_of_videos = len(filenames)
 
   data = np.array([])
+  clip_ids = []
   clips = []
 
   print("List of clips per video: ", clip_list)
@@ -187,9 +197,11 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
     num_clips = 0
 
     ret, frame = getNextFrame(cap)
+
+    vid_id = int(os.path.basename(filename).split('_')[0][1:])
     video = []
     clip = np.array([])
-
+    clip_ids = []
 
     empty_frames = []
     while ret:
@@ -200,7 +212,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         empty_frames.append(total_frames_count)
 
       if total_frames_count in ignore_frames:
-        print("Ignoring frame that has frame.any() = ", frame.any())
+        # print("Ignoring frame that has frame.any() = ", frame.any())
         ret, frame = getNextFrame(cap)
         continue
       elif frame.any():
@@ -239,6 +251,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
           if input and norm_dim == VIDEO_NORM:
             clip = normalize(clip, norm_type)
           video.append(clip)
+          clip_ids.append(str(vid_id)+"_"+str(num_clips))
 
           num_clips += 1
           frames_counter = 0
@@ -255,27 +268,31 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
         break
 
     cap.release()
-    print("Empty frames = ", empty_frames)
+    # print("Empty frames = ", empty_frames)
     video = np.array(video)
 
-    return video.copy(), num_clips
+    return video.copy(), clip_ids.copy(), num_clips
 
   print("Generating numpy arrays from video data:")
   for i, file in enumerate(filenames):
-      v, n = video_file_to_ndarray(i, file)
+      v, c_ids, n = video_file_to_ndarray(i, file)
       print("{} of {} videos (has {} clips) within {} record {}: {}".format(i+1, number_of_videos, n,
                 "input" if input else "label",
                 record_num+1, filenames[i]))
       if not data.any():
         data = v
+        clip_ids = c_ids
       else:
         data = np.concatenate((data, v), axis=0)
+        clip_ids = clip_ids + c_ids
       if not input:
         clips.append(n)
 
+      # print(clip_ids)
+
   print("Final record shape = ", data.shape)
 
-  return data, clips
+  return data, clips, clip_ids
 
 
 
@@ -336,12 +353,12 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
 
     #When calling convert_video_to_numpy with input=False, returns a list of the frames in the label data
     #which is used to ensure the number of frames processed in the label videos is the same as the input videos.
-    label_data, clip_list = convert_video_to_numpy(record_num=i, filenames=label_filenames_split[i],
+    label_data, clip_list, clip_ids = convert_video_to_numpy(record_num=i, filenames=label_filenames_split[i],
                                                     width=width, height=height, n_channels=label_channels, max_frames_per_clip=max_frames_per_video,
                                                     input=False, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, label_dtype=label_dtype)
 
     #When input=True, an empty frame_list is returned.
-    input_data, _ = convert_video_to_numpy(record_num=i, filenames=input_filenames_split[i],
+    input_data, _, _= convert_video_to_numpy(record_num=i, filenames=input_filenames_split[i],
                                            width=width, height=height, n_channels=input_channels, max_frames_per_clip=max_frames_per_video,
                                            input=True, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, label_dtype=label_dtype, clip_list=clip_list)
 
@@ -351,7 +368,7 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
 
     save_numpy_to_tfrecords(input_data, label_data, destination_path,
                             dataset_name, i, total_record_number, input_dtype, label_dtype,
-                            max_frames_per_video, clips_per_file)
+                            max_frames_per_video, clips_per_file, clip_ids)
 
 
 if __name__ == "__main__":
@@ -434,8 +451,8 @@ if __name__ == "__main__":
     clips_per_file = 1
     videos_per_record = 1
   elif options.num_files == "single":
-    clips_per_file = 4000
-    videos_per_record = 1000
+    clips_per_file = 40000
+    videos_per_record = 10000
   else:
     exit(1)
 
@@ -468,11 +485,11 @@ if __name__ == "__main__":
     label_source_dir = ["/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/label"]
   elif options.machine == 3:
     destination = "/home/rafael/Documents/ic/src/data/" + options.dataset + "/tfr"
-    input_source_dir = ["/home/rafael/Documents/ic/src/data/" + options.dataset + "/inputs"]
-    label_source_dir = ["/home/rafael/Documents/ic/src/data/" + options.dataset + "/labels"]
-    if options.dataset == "train":
-        input_source_dir.append("/home/rafael/Documents/ic/src/data/augm_out/inputs")
-        label_source_dir.append("/home/rafael/Documents/ic/src/data/augm_out/labels")
+    input_source_dir = ["/home/rafael/Documents/ic/src/data/" + options.dataset + "/inputs", "/home/rafael/Documents/ic/src/data/val/inputs"]
+    label_source_dir = ["/home/rafael/Documents/ic/src/data/" + options.dataset + "/labels", "/home/rafael/Documents/ic/src/data/val/labels"]
+    # if options.dataset == "train":
+    #     input_source_dir.append("/home/rafael/Documents/ic/src/data/augm_out/inputs")
+    #     label_source_dir.append("/home/rafael/Documents/ic/src/data/augm_out/labels")
   else:
     exit(1)
 

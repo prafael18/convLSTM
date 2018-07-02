@@ -5,6 +5,7 @@ import time
 import datetime
 import optparse
 import os
+import random
 
 import model
 import config
@@ -173,6 +174,8 @@ def parse_function(serialized_example):
         features = {
             'height': tf.FixedLenFeature([], tf.int64),
             'width': tf.FixedLenFeature([], tf.int64),
+            #'video_id' : tf.FixedLenFeature([], tf.int64),
+            #'clip_id' : tf.FixedLenFeature([], tf.int64),
             'num_frames': tf.FixedLenFeature([], tf.int64),
             'input': tf.VarLenFeature(tf.string),
             'label': tf.VarLenFeature(tf.string)
@@ -181,6 +184,8 @@ def parse_function(serialized_example):
 
     height = tf.cast(features['height'], tf.int32)
     width = tf.cast(features['width'], tf.int32)
+    #video_id = tf.cast(features['video_id'], tf.int32)
+    #clip_id = tf.cast(features['clip_id'], tf.int32)
     num_frames = tf.cast(features['num_frames'], tf.int32)
 
     dense_input = tf.sparse_tensor_to_dense(features['input'], default_value='*')
@@ -224,7 +229,6 @@ def get_data(load_model, filenames, batch_size, names=None):
         train_dataset = files.interleave(lambda x: tf.data.TFRecordDataset(x),
                                    cycle_length=filenames.__len__(), block_length=1)
 
-        # train_dataset = tf.data.TFRecordDataset(filenames)
         # train_dataset = train_dataset.shuffle(buffer_size=40)
         train_dataset = train_dataset.map(parse_function)
         train_dataset = train_dataset.batch(batch_size=batch_size)
@@ -253,11 +257,8 @@ def train(norm_type):
     for i in tf.global_variables():
         print(i)
 
-    train_filenames = gfile.Glob(train_tfrecords_filename)
-    val_filenames = gfile.Glob(val_tfrecords_filename)
-
-    #print("Train filenames:\n", train_filenames)
-    #print("Val filenames:\n", val_filenames)
+    # train_filenames = gfile.Glob(train_tfrecords_filename)
+    # val_filenames = gfile.Glob(val_tfrecords_filename)
 
     if load_model_dir:
         model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])
@@ -267,16 +268,6 @@ def train(norm_type):
 
     # Necessary in order for input and output to have well defined shapes
     input_x, label_y = get_placeholders(load_model, names=["input_x", "label_y"])
-
-    train_input, train_label, train_initializer = get_data(load_model=load_model,
-                                                           filenames=train_filenames,
-                                                           batch_size=batch_size,
-                                                           names=["train_input", "train_label", "MakeIterator"])
-
-    val_input, val_label, val_initializer = get_data(load_model=load_model,
-                                                     filenames=val_filenames,
-                                                     batch_size=1,
-                                                     names=["val_input", "val_label", "MakeIterator_1"])
 
     # Gets global_step (i.e. integer that counts how many batches have been processed)
     global_step = tf.train.get_or_create_global_step()
@@ -313,7 +304,37 @@ def train(norm_type):
     val_time = []
     train_time = []
 
+    random.seed(42)
+    vid_ids = [i for i in range(1, 34)]
+
     for epoch in range(num_epochs):
+        val_filenames = []
+        train_filenames = []
+
+        if len(vid_ids) == 0:
+            vid_ids = [i for i in range(1, 34)]
+
+        val_id = vid_ids.pop(random.randint(0, len(vid_ids)))
+
+        filenames = gfile.Glob(train_tfrecords_filename)
+
+        for fn in filenames:
+            if "_" + str(val_id) + "_" in fn:
+                val_filenames.append(fn)
+            else:
+                train_filenames.append(fn)
+
+        print(train_filenames)
+        print(val_filenames)
+        train_input, train_label, train_initializer = get_data(load_model=load_model,
+                                                               filenames=train_filenames,
+                                                               batch_size=batch_size,
+                                                               names=["train_input", "train_label", "MakeIterator"])
+
+        val_input, val_label, val_initializer = get_data(load_model=load_model,
+                                                         filenames=val_filenames,
+                                                         batch_size=1,
+                                                         names=["val_input", "val_label", "MakeIterator_1"])
         run_train_epoch(initializer=train_initializer,
                         epoch_counter=epoch_counter,
                         train_op=train_op,
@@ -395,7 +416,7 @@ if __name__ == "__main__":
     train_tfrecord_name = "{}_{}/*".format(options.color_space,
         str(options.norm_type + "_" + options.norm_dim) if norm_type else options.norm_dim)
 
-    train_tfrecord_name = "rgb_raw_augm_rng_alt/*"
+    train_tfrecord_name = "rgb_raw_tv/*"
 
     train_tfrecords_filename = os.path.join(config.train["train_tfrecords_filename"][m], train_tfrecord_name)
     val_tfrecords_filename = os.path.join(config.train["val_tfrecords_filename"][m], val_tfrecord_name)
