@@ -35,7 +35,7 @@ def _hmirr(img):
     Flips image horizontally.
     Assumes image with shape ([n_samples, n_channels,] height, width).
     """
-    return img[..., ::-1]
+    return np.flip(img, 1)
 
 def hmirr(x, y):
     x, y = _hmirr(x), y if y is None else _hmirr(y)

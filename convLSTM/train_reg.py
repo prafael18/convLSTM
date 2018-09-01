@@ -5,7 +5,6 @@ import time
 import datetime
 import optparse
 import os
-import random
 
 import model
 import config
@@ -76,10 +75,10 @@ def run_val(initializer, epoch_counter, logits, loss, feed_keys, feed_values, va
             with open(val_result_file, "a") as f:
                 f.write("Epoch {}: LOSS = {:.3f} SIM = {:.3f} CC = {:.3f} MSE = {:.3f}\n"
                         .format(epoch, loss_value, sim_value, cc_value, mse_value))
-            return loss_value
+            return mse_value
 
 
-def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
+def run_train_epoch(initializer, epoch_counter, train_op, loss, l2_loss, feed_keys,
                     feed_values, train_time, summary_op, train_writer=None, run_options=None, run_metadata=None):
 
     run_metadata=None
@@ -87,6 +86,7 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
 
     sess.run(initializer)
     batch_loss = []
+    batch_l2_loss = []
     start_time = time.time()
     count = 1
     while True:
@@ -107,9 +107,10 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
             #                                 feed_dict=feed_dict,
             #                                 options=run_options,
             #                                 run_metadata=run_metadata)
-            _, loss_val = sess.run([train_op, loss],
+            _, loss_val, l2_loss_val = sess.run([train_op, loss, l2_loss],
                                             feed_dict=feed_dict)
             batch_loss.append(loss_val)
+            batch_l2_loss.append(l2_loss_val)
             count+=1
         except tf.errors.OutOfRangeError:
             increment_epoch = epoch_counter.assign_add(1)
@@ -117,7 +118,8 @@ def run_train_epoch(initializer, epoch_counter, train_op, loss, feed_keys,
             epoch = epoch_counter.eval()
             epoch_time = time.time() -start_time
             with open(train_result_file, "a") as f:
-                f.write("Epoch {}: TIME = {:.3f} LOSS = {:.3f}\n".format(epoch, epoch_time, np.mean(np.array(batch_loss))))
+                f.write("Epoch {}: TIME = {:.3f} LOSS = {:.3f} L2_LOSS = {:.3f}\n"
+			.format(epoch, epoch_time, np.mean(np.array(batch_loss)), np.mean(batch_l2_loss)))
             print("Epoch {} completed in {} seconds.\nAverage cross-entropy loss is: {:.3}"
                   .format(epoch, epoch_time, np.mean(np.array(batch_loss))))
             train_time.append(epoch_time)
@@ -174,8 +176,6 @@ def parse_function(serialized_example):
         features = {
             'height': tf.FixedLenFeature([], tf.int64),
             'width': tf.FixedLenFeature([], tf.int64),
-            #'video_id' : tf.FixedLenFeature([], tf.int64),
-            #'clip_id' : tf.FixedLenFeature([], tf.int64),
             'num_frames': tf.FixedLenFeature([], tf.int64),
             'input': tf.VarLenFeature(tf.string),
             'label': tf.VarLenFeature(tf.string)
@@ -184,8 +184,6 @@ def parse_function(serialized_example):
 
     height = tf.cast(features['height'], tf.int32)
     width = tf.cast(features['width'], tf.int32)
-    #video_id = tf.cast(features['video_id'], tf.int32)
-    #clip_id = tf.cast(features['clip_id'], tf.int32)
     num_frames = tf.cast(features['num_frames'], tf.int32)
 
     dense_input = tf.sparse_tensor_to_dense(features['input'], default_value='*')
@@ -229,6 +227,7 @@ def get_data(load_model, filenames, batch_size, names=None):
         train_dataset = files.interleave(lambda x: tf.data.TFRecordDataset(x),
                                    cycle_length=filenames.__len__(), block_length=1)
 
+        # train_dataset = tf.data.TFRecordDataset(filenames)
         # train_dataset = train_dataset.shuffle(buffer_size=40)
         train_dataset = train_dataset.map(parse_function)
         train_dataset = train_dataset.batch(batch_size=batch_size)
@@ -249,7 +248,7 @@ def get_data(load_model, filenames, batch_size, names=None):
 
         return input_batch, label_batch, initializer
 
-def train(norm_type):
+def train(norm_type, lambda_reg):
     BEST_LOSS = 9999
 
     """Train frames for a number of steps"""
@@ -260,6 +259,9 @@ def train(norm_type):
     train_filenames = gfile.Glob(train_tfrecords_filename)
     val_filenames = gfile.Glob(val_tfrecords_filename)
 
+    #print("Train filenames:\n", train_filenames)
+    #print("Val filenames:\n", val_filenames)
+
     if load_model_dir:
         model.load(sess, load_model_dir, tags=[tf.saved_model.tag_constants.TRAINING])
         load_model = True
@@ -269,12 +271,25 @@ def train(norm_type):
     # Necessary in order for input and output to have well defined shapes
     input_x, label_y = get_placeholders(load_model, names=["input_x", "label_y"])
 
+    train_input, train_label, train_initializer = get_data(load_model=load_model,
+                                                           filenames=train_filenames,
+                                                           batch_size=batch_size,
+                                                           names=["train_input", "train_label", "MakeIterator"])
+
+    val_input, val_label, val_initializer = get_data(load_model=load_model,
+                                                     filenames=val_filenames,
+                                                     batch_size=1,
+                                                     names=["val_input", "val_label", "MakeIterator_1"])
+
     # Gets global_step (i.e. integer that counts how many batches have been processed)
     global_step = tf.train.get_or_create_global_step()
 
     # Train ops
     logits = get_logits(load_model=load_model, input=input_x)
-    loss = get_loss(load_model=load_model, logits=logits, label=label_y)
+    model_loss = get_loss(load_model=load_model, logits=logits, label=label_y)
+    L2loss = tf.add_n([tf.nn.l2_loss(v) for v in tf.trainable_variables() if 'bias' not in v.name ]) * lambda_reg
+    print(L2loss)
+    loss = model_loss + L2loss
     train_op = get_train_op(load_model=load_model, loss=loss, global_step=global_step)
 
     # Initialize variables op
@@ -305,20 +320,11 @@ def train(norm_type):
     train_time = []
 
     for epoch in range(num_epochs):
-
-        train_input, train_label, train_initializer = get_data(load_model=load_model,
-                                                               filenames=train_filenames,
-                                                               batch_size=batch_size,
-                                                               names=["train_input", "train_label", "MakeIterator"])
-
-        val_input, val_label, val_initializer = get_data(load_model=load_model,
-                                                         filenames=val_filenames,
-                                                         batch_size=1,
-                                                         names=["val_input", "val_label", "MakeIterator_1"])
         run_train_epoch(initializer=train_initializer,
                         epoch_counter=epoch_counter,
                         train_op=train_op,
                         loss=loss,
+			l2_loss=L2loss,
                         feed_keys=[input_x, label_y],
                         feed_values=[train_input, train_label],
                         train_time=train_time,
@@ -328,21 +334,21 @@ def train(norm_type):
                         run_metadata=run_metadata)
 
         if (epoch+1)%val_epochs == 0:
-            val_loss = run_val(initializer=val_initializer,
+            mse = run_val(initializer=val_initializer,
                     epoch_counter=epoch_counter,
                     logits=logits,
                     loss=loss,
                     feed_keys=[input_x, label_y],
                     feed_values=[val_input, val_label],
                     val_time=val_time)
-            if val_loss < BEST_LOSS:
-                BEST_LOSS = val_loss
+            if mse < BEST_LOSS:
+                BEST_LOSS = mse
                 worse_epochs = 0
                 model.save(sess, os.path.join(save_model_dir, "best"), overwrite=True,
                            tags=[tf.saved_model.tag_constants.TRAINING])
                 with open(val_result_file.split('.')[0] + "_best.txt", "w") as f:
                     f.write("Best results on validation set:\n")
-                    f.write("Epoch {}: LOSS = {:.4f}\n".format(epoch, val_loss))
+                    f.write("Epoch {}: LOSS = {:.4f}\n".format(epoch, mse))
             else:
                 model.save(sess, os.path.join(save_model_dir, "latest"), overwrite=True,
                            tags=[tf.saved_model.tag_constants.TRAINING])
@@ -385,7 +391,10 @@ if __name__ == "__main__":
                       action="store", type="int", dest="experiment",
                       help="Machine index where execution takes place. 0 - local, 1 - neuron0, 2 - neu",
                       default=-1)
-
+    parser.add_option("-l", "--lambda",
+                      action="store", type="float", dest="lambda_reg",
+                      help="Machine index where execution takes place. 0 - local, 1 - neuron0, 2 - neu",
+                      default=-1)
 
     options, args = parser.parse_args()
 
@@ -401,14 +410,10 @@ if __name__ == "__main__":
     train_tfrecord_name = "{}_{}/*".format(options.color_space,
         str(options.norm_type + "_" + options.norm_dim) if norm_type else options.norm_dim)
 
-    #train_tfrecord_name = "rgb_raw_tv/*"
-
     train_tfrecords_filename = os.path.join(config.train["train_tfrecords_filename"][m], train_tfrecord_name)
     val_tfrecords_filename = os.path.join(config.train["val_tfrecords_filename"][m], val_tfrecord_name)
 
-    #save_model_dir = config.train["save_model_dir"][m]
-    load_model_dir = config.train["load_model_dir"][m]
-    
+    load_model_dir = config.train["load_model_dir"][m]    
 
     base_dir = os.path.join("/home/panda/ic/results", str(options.experiment))
     print(base_dir)
@@ -420,10 +425,10 @@ if __name__ == "__main__":
        exit(1)
 
     with open(os.path.join(base_dir, "README.md"), "w") as f:
-        test_id = "{}_{}".format(
+        test_id = "{}_{}\nlambda={}".format(
 		options.color_space,
 		str(options.norm_type + "_" + options.norm_dim) 
-		if norm_type else options.norm_dim)
+		if norm_type else options.norm_dim, options.lambda_reg)
         f.write(test_id)
 
     save_model_dir = base_dir
@@ -439,11 +444,13 @@ if __name__ == "__main__":
           " val_filename = {}\n"
           " colorspace = {}\n"
           " norm_type = {}\n"
-          " norm_dim = {}\n".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
-                                  options.color_space, options.norm_type, options.norm_dim))
+          " norm_dim = {}\n"
+          " lambda = {}\n".format(m, options.gpu, train_tfrecords_filename, val_tfrecords_filename,
+                                  options.color_space, options.norm_type, options.norm_dim, options.lambda_reg))
 
     gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=options.gpu)
 
     # with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options)) as sess:
     with tf.Session() as sess:
-        train(norm_type)
+        train(norm_type, options.lambda_reg)
+

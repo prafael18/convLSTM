@@ -10,13 +10,13 @@
 
 
 from tensorflow.python.platform import gfile
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 import cv2
 import numpy as np
 import tensorflow as tf
 import optparse
 import os
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 STD_SCORE = 1
 FT_SCALE = 0
@@ -291,8 +291,7 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
       # print(clip_ids)
 
   print("Final record shape = ", data.shape)
-
-  return data, clips, clip_ids
+  return data, clips, clip_ids, n
 
 
 
@@ -348,17 +347,19 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
   print("Saving videos into {} record(s) where:".format(total_record_number))
   for k in range(input_filenames_split.__len__()):
     print("Record {} has {} videos.".format(k+1, input_filenames_split[k].__len__()))
-
+ 
+  total_clips = 0
   for i in range(total_record_number):
 
     #When calling convert_video_to_numpy with input=False, returns a list of the frames in the label data
     #which is used to ensure the number of frames processed in the label videos is the same as the input videos.
-    label_data, clip_list, clip_ids = convert_video_to_numpy(record_num=i, filenames=label_filenames_split[i],
+    label_data, clip_list, clip_ids, n = convert_video_to_numpy(record_num=i, filenames=label_filenames_split[i],
                                                     width=width, height=height, n_channels=label_channels, max_frames_per_clip=max_frames_per_video,
                                                     input=False, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, label_dtype=label_dtype)
+    total_clips += n
 
     #When input=True, an empty frame_list is returned.
-    input_data, _, _= convert_video_to_numpy(record_num=i, filenames=input_filenames_split[i],
+    input_data, _, _, _= convert_video_to_numpy(record_num=i, filenames=input_filenames_split[i],
                                            width=width, height=height, n_channels=input_channels, max_frames_per_clip=max_frames_per_video,
                                            input=True, norm_dim=norm_dim, norm_type=norm_type, colorspace=colorspace, label_dtype=label_dtype, clip_list=clip_list)
 
@@ -370,6 +371,8 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
                             dataset_name, i, total_record_number, input_dtype, label_dtype,
                             max_frames_per_video, clips_per_file, clip_ids)
 
+  print("Total clips = ", total_clips)
+  exit(1)
 
 if __name__ == "__main__":
   parser = optparse.OptionParser()
@@ -448,7 +451,7 @@ if __name__ == "__main__":
     exit(1)
 
   if options.num_files == "many":
-    clips_per_file = 1
+    clips_per_file = 5
     videos_per_record = 1
   elif options.num_files == "single":
     clips_per_file = 40000
@@ -464,7 +467,7 @@ if __name__ == "__main__":
   else:
     tfrecord_name = "{}_{}_{}_{}".format(options.dataset, options.norm_type, options.norm_dim, options.color_space)
 
-  tfrecord_name = "train_raw_rgb_augm_rng"
+  #tfrecord_name = "train_raw_rgb_faugm"
 
   print("tfrecord_name is {}".format(tfrecord_name))
 
@@ -476,9 +479,9 @@ if __name__ == "__main__":
     destination = "/home/panda/ic/data/" + options.dataset
     input_source_dir = ["/home/panda/raw_data/" + options.dataset + "/inputs"]
     label_source_dir = ["/home/panda/raw_data/" + options.dataset + "/labels"]
-    if options.dataset == "train":
-        input_source_dir.append("/home/panda/raw_data/augm_rng/inputs")
-        label_source_dir.append("/home/panda/raw_data/augm_rng/labels")
+    #if options.dataset == "train":
+    #    input_source_dir = ["/home/panda/raw_data/augm_frng/inputs"]
+    #    label_source_dir = ["/home/panda/raw_data/augm_frng/labels"]
   elif options.machine == 2:
     destination = "/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/tfr"
     input_source_dir = ["/home/rafael/Documents/unicamp/ic/src/convLSTM/proc/test/input"]

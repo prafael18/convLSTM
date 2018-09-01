@@ -3,7 +3,7 @@ import os
 import optparse
 import numpy as np
 from tensorflow.python.platform import gfile
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import model
 
 

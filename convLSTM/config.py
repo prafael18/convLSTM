@@ -56,13 +56,14 @@ train = {
          "/home/storage_local/panda/log/status.txt",
          "/home/rafael/Documents/ic/src/log/status.txt"],
 
-    "num_epochs": 500,
+    "num_epochs": 100,
     "batch_size": 5,
     "image_height": 135,
     "image_width": 240,
     "input_channels": 3,
     "label_channels": 1,
-    "val_epochs": 1
+    "val_epochs": 1,
+    "lambda": 5e-3
 }
 
 

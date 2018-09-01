@@ -78,6 +78,8 @@ def mse(mse_list, pred, label):
 
     for v in range(num_videos):
         for f in range(num_frames):
+           pred[v][f] = (pred[v][f]-np.min(pred[v][f]))/(np.max(pred[v][f])-np.min(pred[v][f]))
+           label[v][f] = (label[v][f]-np.min(label[v][f]))/(np.max(label[v][f])-np.min(label[v][f]))
            mean_squared_error.append(np.mean((pred[v][f]-label[v][f])**2))
     mse_list.append(np.mean(np.array(mean_squared_error)))
 
@@ -239,15 +241,19 @@ def eval(tf_filename, load_model_dir, name, mode, batch_size):
 
             except tf.errors.OutOfRangeError:
                 epoch = epoch_tensor.eval()
-                print("Epoch {}".format(epoch))
-                print("CC = {:.4f}".format(np.mean(cc_list)))
-                print("SIM = {:.4f}".format(np.mean(sim_list)))
-                print("MSE = {:.4f}".format(np.mean(mse_list)))
+                text = "Epoch {}\n" \
+                       "CC = {:.4f}\n" \
+                       "SIM = {:.4f}\n" \
+                       "MSE = {:.4f}" \
+		       .format(epoch, np.mean(cc_list), np.mean(sim_list), np.mean(mse_list))
+                with open(os.path.join(load_model_dir, "preds.txt"), "w+") as f:
+                    f.write(text)
+                print(text)
                 return
 
 if __name__ == "__main__":
-    base_model_dir = "/home/rafael/Documents/ic/src/results/exp"
-    base_tfrecord_dir = "/home/rafael/Documents/ic/src/data/test/tfr/*.tfrecords"
+    base_model_dir = "/home/panda/ic/results"
+    base_tfrecord_dir = "/home/panda/ic/data/test/*.tfrecords"
     batch_size = 5
 
     # Parse options
@@ -283,13 +289,13 @@ if __name__ == "__main__":
     else: exit(1)
 
     # Retrieve directory from which to load model
-    load_model_dir = os.path.join(base_model_dir, str(exp))
+    load_model_dir = os.path.join(base_model_dir, str(exp), "best")
 
     # Retrieve tfrecords filename
     tf_filename = None
 
     filepaths = gfile.Glob(base_tfrecord_dir)
-    readme_file = os.path.join(load_model_dir, "README.md")
+    readme_file = os.path.join(base_model_dir, str(exp), "README.md")
     with open(readme_file, "r") as f:
         name = f.readline().strip()
         keys = name.split("_")
