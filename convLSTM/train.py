@@ -229,7 +229,7 @@ def get_data(load_model, filenames, batch_size, names=None):
         train_dataset = files.interleave(lambda x: tf.data.TFRecordDataset(x),
                                    cycle_length=filenames.__len__(), block_length=1)
 
-        # train_dataset = train_dataset.shuffle(buffer_size=40)
+        train_dataset = train_dataset.shuffle(buffer_size=80)
         train_dataset = train_dataset.map(parse_function)
         train_dataset = train_dataset.batch(batch_size=batch_size)
 
@@ -403,12 +403,16 @@ if __name__ == "__main__":
 
     #train_tfrecord_name = "rgb_raw_tv/*"
 
-    train_tfrecords_filename = os.path.join(config.train["train_tfrecords_filename"][m], train_tfrecord_name)
-    val_tfrecords_filename = os.path.join(config.train["val_tfrecords_filename"][m], val_tfrecord_name)
+    # train_tfrecords_filename = os.path.join(config.train["train_tfrecords_filename"][m], train_tfrecord_name)
+    # val_tfrecords_filename = os.path.join(config.train["val_tfrecords_filename"][m], val_tfrecord_name)
+
+    input_base_dir = "/home/panda/data/dhf1k"
+    train_tfrecords_filename = os.path.join(input_base_dir, "train", "*")
+    val_tfrecords_filename = os.path.join(input_base_dir, "val", "*")
 
     #save_model_dir = config.train["save_model_dir"][m]
     load_model_dir = config.train["load_model_dir"][m]
-    
+
 
     base_dir = os.path.join("/home/panda/ic/results", str(options.experiment))
     print(base_dir)
@@ -416,13 +420,13 @@ if __name__ == "__main__":
     if not os.path.isdir(base_dir):
         os.mkdir(base_dir)
     else:
-       print("Experiment ID already exists")   
+       print("Experiment ID already exists")
        exit(1)
 
     with open(os.path.join(base_dir, "README.md"), "w") as f:
         test_id = "{}_{}".format(
 		options.color_space,
-		str(options.norm_type + "_" + options.norm_dim) 
+		str(options.norm_type + "_" + options.norm_dim)
 		if norm_type else options.norm_dim)
         f.write(test_id)
 

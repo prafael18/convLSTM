@@ -7,8 +7,6 @@
  an equal separation distribution of the video images. Implementation supports Optical Flow
  (currently OpenCV's calcOpticalFlowFarneback) as an additional 4th channel.
 """
-
-
 from tensorflow.python.platform import gfile
 #from matplotlib import pyplot as plt
 import cv2
@@ -153,6 +151,93 @@ def plot_frame(prev_image, new_image, title):
   plt.imshow(new_image)
   plt.show()
 
+def video_file_to_ndarray(i, filename):
+
+    ignore_frames = []
+    if filename.find('v35') >= 0:
+     ignore_frames = [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]
+    if filename.find('v12') >= 0:
+     ignore_frames = [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 400]
+
+    assert os.path.isfile(filename), "Couldn't find video file"
+    cap = getVideoCapture(filename)
+    assert cap is not None, "Couldn't load video capture:" + filename + ". Moving to next video."
+
+    total_frames_count = 0
+    frames_counter = 0
+    num_clips = 0
+
+    ret, frame = getNextFrame(cap)
+
+    vid_id = int(os.path.basename(filename).split('_')[0][1:])
+    video = []
+    clip = np.array([])
+    clip_ids = []
+
+    empty_frames = []
+    while ret:
+
+     total_frames_count += 1
+
+     if not frame.any():
+       empty_frames.append(total_frames_count)
+
+     if total_frames_count in ignore_frames:
+       # print("Ignoring frame that has frame.any() = ", frame.any())
+       ret, frame = getNextFrame(cap)
+       continue
+     elif frame.any():
+       # Change image colorspace (n_channels is 3 for input and 1 for label)
+       if input:
+         if colorspace:
+           image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+         else:
+           image = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+       else:
+         if label_dtype == "float32":
+             frame = normalize(frame, FT_SCALE)
+         image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+       image = cv2.resize(image, None, fx=0.125, fy=0.125, interpolation=cv2.INTER_CUBIC)
+
+       if np.sum(image) == 0:
+         ret, frame = getNextFrame(cap)
+         continue
+
+       if input and norm_dim == FRAME_NORM:
+         image = normalize(image, norm_type)
+
+       if not clip.any():
+         clip = image.reshape(1, height, width, n_channels)
+       else:
+         clip = np.concatenate((clip, image.reshape(1, height, width, n_channels)), axis=0)
+
+       frames_counter += 1
+
+       if frames_counter == max_frames_per_clip:
+         if input and norm_dim == VIDEO_NORM:
+           clip = normalize(clip, norm_type)
+         video.append(clip)
+         clip_ids.append(str(vid_id)+"_"+str(num_clips))
+
+         num_clips += 1
+         frames_counter = 0
+         clip = np.array([])
+
+       if input:
+         if num_clips == clip_list[i]:
+           break
+
+       ret, frame = getNextFrame(cap)
+
+     else:
+       print("Breaking because frame.any() = ", frame.any())
+       break
+
+    cap.release()
+    video = np.array(video)
+
+    return video.copy(), clip_ids.copy(), num_clips
 
 def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max_frames_per_clip, input, norm_dim, norm_type,
                            colorspace, label_dtype, clip_list=None):
@@ -180,99 +265,6 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
 
   print("List of clips per video: ", clip_list)
 
-  def video_file_to_ndarray(i, filename):
-
-    ignore_frames = []
-    if filename.find('v35') >= 0:
-      ignore_frames = [251, 252, 253, 254, 255, 256, 257, 258, 259, 260]
-    if filename.find('v12') >= 0:
-      ignore_frames = [251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 400]
-
-    assert os.path.isfile(filename), "Couldn't find video file"
-    cap = getVideoCapture(filename)
-    assert cap is not None, "Couldn't load video capture:" + filename + ". Moving to next video."
-
-    total_frames_count = 0
-    frames_counter = 0
-    num_clips = 0
-
-    ret, frame = getNextFrame(cap)
-
-    vid_id = int(os.path.basename(filename).split('_')[0][1:])
-    video = []
-    clip = np.array([])
-    clip_ids = []
-
-    empty_frames = []
-    while ret:
-
-      total_frames_count += 1
-
-      if not frame.any():
-        empty_frames.append(total_frames_count)
-
-      if total_frames_count in ignore_frames:
-        # print("Ignoring frame that has frame.any() = ", frame.any())
-        ret, frame = getNextFrame(cap)
-        continue
-      elif frame.any():
-        # Change image colorspace (n_channels is 3 for input and 1 for label)
-        if input:
-          if colorspace:
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-          else:
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-        else:
-          if label_dtype == "float32":
-              frame = normalize(frame, FT_SCALE)
-          image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        image = cv2.resize(image, None, fx=0.125, fy=0.125, interpolation=cv2.INTER_CUBIC)
-
-        if np.sum(image) == 0:
-          ret, frame = getNextFrame(cap)
-          continue
-
-        if input and norm_dim == FRAME_NORM:
-          image = normalize(image, norm_type)
-        #if not input:
-          #image = image.reshape(image.shape[0], image.shape[1], 1)
-          # image = normalize(image, FT_SCALE)
-          #image = image.reshape(image.shape[:-1])
-
-        if not clip.any():
-          clip = image.reshape(1, height, width, n_channels)
-        else:
-          clip = np.concatenate((clip, image.reshape(1, height, width, n_channels)), axis=0)
-
-        frames_counter += 1
-
-        if frames_counter == max_frames_per_clip:
-          if input and norm_dim == VIDEO_NORM:
-            clip = normalize(clip, norm_type)
-          video.append(clip)
-          clip_ids.append(str(vid_id)+"_"+str(num_clips))
-
-          num_clips += 1
-          frames_counter = 0
-          clip = np.array([])
-
-        if input:
-          if num_clips == clip_list[i]:
-            break
-
-        ret, frame = getNextFrame(cap)
-
-      else:
-        print("Breaking because frame.any() = ", frame.any())
-        break
-
-    cap.release()
-    # print("Empty frames = ", empty_frames)
-    video = np.array(video)
-
-    return video.copy(), clip_ids.copy(), num_clips
-
   print("Generating numpy arrays from video data:")
   for i, file in enumerate(filenames):
       v, c_ids, n = video_file_to_ndarray(i, file)
@@ -288,7 +280,6 @@ def convert_video_to_numpy(record_num, filenames, width, height, n_channels, max
       if not input:
         clips.append(n)
 
-      # print(clip_ids)
 
   print("Final record shape = ", data.shape)
   return data, clips, clip_ids, n
@@ -339,7 +330,7 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
   if n_videos_in_record > len(input_filenames):
     total_record_number = 1
   else:
-    total_record_number = int(np.ceil(len(input_filenames) / n_videos_in_record))
+    total_record_number = int(np.ceil(len(input_filenames)/n_videos_in_record))
 
   input_filenames_split = list(get_chunks(input_filenames, n_videos_in_record))
   label_filenames_split = list(get_chunks(label_filenames, n_videos_in_record))
@@ -347,7 +338,7 @@ def convert_videos_to_tfrecord(input_path, label_path, destination_path, dataset
   print("Saving videos into {} record(s) where:".format(total_record_number))
   for k in range(input_filenames_split.__len__()):
     print("Record {} has {} videos.".format(k+1, input_filenames_split[k].__len__()))
- 
+
   total_clips = 0
   for i in range(total_record_number):
 
@@ -381,9 +372,13 @@ if __name__ == "__main__":
                     action="store", type="int", dest="machine",
                     help="Machine index where execution takes place. 0 - local, 1 - neuron0, 2 - neuron1.",
                     default=0)
-  parser.add_option("-s", "--dataset",
+  parser.add_option("-n", "--dataset_name",
                     action="store", type="string", dest="dataset",
-                    help="Dataset that should be processed. Either test, train or val.",
+                    help="Dataset name to choose from. Either dhf1k or savam.",
+                    default="val")
+  parser.add_option("-s", "--dataset_type",
+                    action="store", type="string", dest="type",
+                    help="Dataset type that should be processed. Either test, train or val.",
                     default="val")
   parser.add_option("-c", "--color_space",
                     action="store", type="string", dest="color_space",
@@ -463,18 +458,19 @@ if __name__ == "__main__":
   print("norm_dim is {} ".format(options.norm_dim))
 
   if not options.norm_type:
-    tfrecord_name = "{}_{}_{}".format(options.dataset, options.norm_dim, options.color_space)
+    tfrecord_name = "{}_{}_{}".format(options.type, options.norm_dim, options.color_space)
   else:
-    tfrecord_name = "{}_{}_{}_{}".format(options.dataset, options.norm_type, options.norm_dim, options.color_space)
+    tfrecord_name = "{}_{}_{}_{}".format(options.type, options.norm_type, options.norm_dim, options.color_space)
 
   #tfrecord_name = "train_raw_rgb_faugm"
 
   print("tfrecord_name is {}".format(tfrecord_name))
 
   if options.machine == 0:
-    destination = "/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/tfr"
-    input_source_dir = ["/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/inputs"]
-    label_source_dir = ["/home/rafael/Documents/unicamp/ic/src/data/" + options.dataset + "/labels"]
+    base_dir = "/home/rafael/Documents/unicamp/ic/data"
+    destination = os.path.join(base_dir, options.dataset, options.type, "tfr")
+    input_source_dir = [os.path.join(base_dir, options.dataset, options.type, "inputs")]
+    label_source_dir = [os.path.join(base_dir, options.dataset, options.type, "labels")]
   elif options.machine == 1:
     destination = "/home/panda/ic/data/" + options.dataset
     input_source_dir = ["/home/panda/raw_data/" + options.dataset + "/inputs"]
@@ -507,7 +503,7 @@ if __name__ == "__main__":
   height_video = 135
   input_channels = 3
   label_channels = 1
-  max_frames_per_video = 15
+  max_frames_per_video = 18
   # label_dtype = "float32"
   file_suffix = "*.avi"
 

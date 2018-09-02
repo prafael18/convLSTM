@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorflow.python.platform import gfile
+from scipy.misc import imread, imshow
 import cv2
 import os
 
@@ -12,7 +13,8 @@ import os
 # save_path = '/home/rafael/Documents/ic/src/convLSTM/proc/test'
 
 # tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/raw_rgb_lfs/*.tfrecords'
-tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/*'
+# tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/*'
+tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/data/dhf1k/train/train_2_*'
 save_path = '/home/rafael/Documents/ic/src/'
 
 height = None
@@ -72,9 +74,25 @@ def map(input_video, output_start, output_end):
 
 def readTFRecord(filepaths):
 
+    files = 0
     for path in filepaths:
       record_iterator = tf.python_io.tf_record_iterator(path=path)
       filename = path.split('/')[-1]
+      print(filename)
+
+      cnt = 0
+      for i, string_record in enumerate(record_iterator):
+          cnt += 1
+      print("Number of clips in record = ", cnt)
+      files += 1
+    print("Total files = ", files)
+    exit(1)
+
+
+    for path in filepaths:
+      record_iterator = tf.python_io.tf_record_iterator(path=path)
+      filename = path.split('/')[-1]
+      print(filename)
 
       for i, string_record in enumerate(record_iterator):
         example = tf.train.Example()
@@ -86,12 +104,12 @@ def readTFRecord(filepaths):
         width = int(example.features.feature['width']
                     .int64_list
                     .value[0])
-        video_id = int(example.features.feature['video_id']
-                    .int64_list
-                    .value[0])
-        clip_id = int(example.features.feature['clip_id']
-                    .int64_list
-                    .value[0])
+        # video_id = int(example.features.feature['video_id']
+        #             .int64_list
+        #             .value[0])
+        # clip_id = int(example.features.feature['clip_id']
+        #             .int64_list
+        #             .value[0])
 
         frames = int(example.features.feature['num_frames']
                      .int64_list
@@ -108,9 +126,13 @@ def readTFRecord(filepaths):
         input_string_list = [np.fromstring(input_string, dtype=dtype) for input_string in input_byte_list]
         input_video = np.reshape(input_string_list, (frames, height, width, -1))
 
+        imshow(input_video[0])
+
         label_byte_list = example.features.feature['label'].bytes_list.value
         label_string_list = [np.fromstring(label_string, dtype=np.uint8) for label_string in label_byte_list]
-        label_video = np.reshape(label_string_list, (frames, height, width, -1))
+        label_video = np.reshape(label_string_list, (frames, height, width))
+
+        imshow(label_video[0])
 
         if i == 0:
             # pixel_intensity(input_video)
