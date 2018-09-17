@@ -14,7 +14,7 @@ import os
 
 # tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/raw_rgb_lfs/*.tfrecords'
 # tfrecord_path = '/home/rafael/Documents/ic/src/data/train/tfr/*'
-tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/data/dhf1k/train/train_2_*'
+tfrecord_path = '/home/rafael/Documents/unicamp/ic/src/data/dhf1k/train/train_*'
 save_path = '/home/rafael/Documents/ic/src/'
 
 height = None
@@ -86,7 +86,6 @@ def readTFRecord(filepaths):
       print("Number of clips in record = ", cnt)
       files += 1
     print("Total files = ", files)
-    exit(1)
 
 
     for path in filepaths:
@@ -104,16 +103,11 @@ def readTFRecord(filepaths):
         width = int(example.features.feature['width']
                     .int64_list
                     .value[0])
-        # video_id = int(example.features.feature['video_id']
-        #             .int64_list
-        #             .value[0])
-        # clip_id = int(example.features.feature['clip_id']
-        #             .int64_list
-        #             .value[0])
 
         frames = int(example.features.feature['num_frames']
                      .int64_list
                      .value[0])
+
         print("Number of frames in this record is ", frames)
 
         if "ss" in filename or "fs" in filename:
@@ -134,29 +128,17 @@ def readTFRecord(filepaths):
 
         imshow(label_video[0])
 
-        if i == 0:
-            # pixel_intensity(input_video)
-            # stats(input_video)
-            pixel_intensity(label_video)
-            stats(label_video)
-
-        if "ss" in filename:
-          input_video = (input_video - np.min(input_video))/(np.max(input_video) - np.min(input_video))
-
-        label_video = np.reshape(label_video, label_video.shape[:-1])
-        print(label_video.shape)
-        print(video_id, clip_id)
-        if clip_id == 0 and video_id == 29:
-            plt.imshow(label_video[0])
-            plt.show()
-        # print("Video shape = ", input_video.shape)
-
-        if "raw" in filename:
-          video_name = '_'.join(filename.split('_')[:3])
-        else:
-          video_name = '_'.join(filename.split('_')[:4])
-
-        # print (video_name)
+        # if i == 0:
+        #     pixel_intensity(label_video)
+        #     stats(label_video)
+        #
+        # if "ss" in filename:
+        #   input_video = (input_video - np.min(input_video))/(np.max(input_video) - np.min(input_video))
+        #
+        # if "raw" in filename:
+        #   video_name = '_'.join(filename.split('_')[:3])
+        # else:
+        #   video_name = '_'.join(filename.split('_')[:4])
 
         # save_video(video_name, input_video)
 
